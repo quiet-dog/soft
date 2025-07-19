@@ -1,0 +1,36 @@
+{
+    "One": [
+        {
+            "value": "value + 1",
+            "label": "+"
+        },
+        {
+            "value": "value - 1",
+            "label": "-"
+        },
+        {
+            "value": "value * 10",
+            "label": "*"
+        },
+        {
+            "value": "value / 10",
+            "label": "/"
+        },
+        {
+            "value": "value % 10",
+            "label": "%"
+        },
+        {
+            "value": "value == 10",
+            "label": "等于"
+        },
+        {
+            "value": "value != 10 ? 2 : value",
+            "label": "三元表达式  (不等于10为2,等于10为 value当前值)"
+        },
+        {
+            "value": "value[0]",
+            "label": "数组取值  数组的第一个数值"
+        }
+    ]
+}
