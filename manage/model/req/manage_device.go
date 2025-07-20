@@ -11,6 +11,7 @@ type ManageDeviceSearch struct {
 	Manufacturer         string `json:"manufacturer" description:"制造商"`          // 制造商
 	Model                string `json:"model" description:"设备型号"`                // 设备型号
 	InstallationLocation string `json:"installationLocation" description:"安装位置"` // 安装位置
+	ServerId             int64  `json:"serverId" description:"服务器ID"`            // 服务器ID
 }
 
 type ManageDeviceSave struct {

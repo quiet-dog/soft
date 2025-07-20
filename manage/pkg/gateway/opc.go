@@ -13,6 +13,8 @@ import (
 	"github.com/gopcua/opcua/ua"
 )
 
+type OpcNodes []OpcNode
+
 type OpcNode struct {
 	ID     int64
 	NodeId string
@@ -23,8 +25,9 @@ type OpcClient struct {
 	client   *opcua.Client
 	isOnline bool
 	sub      *monitor.Subscription
-	nodes    []OpcNode
+	nodes    OpcNodes
 	ctx      context.Context
+	channel  chan Value
 }
 
 func (c *OpcClient) TestPing() (err error) {
@@ -69,7 +72,8 @@ func (c *OpcClient) TestPing() (err error) {
 	return
 }
 
-func (c *OpcClient) connectAndSubscribeOnce() (err error) {
+func (c *OpcClient) connectAndSubscribeOnce(channel chan Value) (err error) {
+	c.channel = channel
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	c.ctx = ctx
@@ -95,6 +99,7 @@ func (c *OpcClient) connectAndSubscribeOnce() (err error) {
 		return
 	}
 
+	c.client = client
 	if err = client.Connect(ctx); err != nil {
 		return
 	}
@@ -118,7 +123,7 @@ func (c *OpcClient) connectAndSubscribeOnce() (err error) {
 
 	// // start channel-based subscription
 	wg.Add(1)
-	go c.startChanSub(ctx, m, 2*time.Second, 0, wg)
+	go c.startChanSub(ctx, m, c.conf.SubTime, 0, wg)
 
 	<-ctx.Done()
 	wg.Wait()
@@ -168,9 +173,36 @@ func (c *OpcClient) startChanSub(ctx context.Context, m *monitor.NodeMonitor, in
 			if msg.Error != nil {
 				log.Printf("[channel ] sub=%d error=%s", sub.SubscriptionID(), msg.Error)
 			} else {
-				log.Printf("[channel ] sub=%d ts=%s node=%s value=%v", sub.SubscriptionID(), msg.SourceTimestamp.UTC().Format(time.RFC3339), msg.NodeID, msg.Value.Value())
+				if c.channel == nil {
+					continue
+				}
+				nodes := []Value{}
+				for _, node := range c.nodes {
+					if node.NodeId == msg.NodeID.String() {
+						nodes = append(nodes, Value{
+							ID:         node.ID,
+							Value:      msg.Value.Value(),
+							CreateTime: msg.SourceTimestamp,
+							Type:       msg.Value.Type().String(),
+						})
+						fmt.Println("Received nodes:=========", node.ID)
+					}
+				}
+				for _, v := range nodes {
+					select {
+					case c.channel <- v:
+					default:
+						// log.Println("[WARN] Channel is full, dropping message")
+						continue
+					}
+				}
+
+				// log.Printf("[channel ] sub=%d ts=%s node=%s value=%v", sub.SubscriptionID(), msg.SourceTimestamp.UTC().Format(time.RFC3339), msg.NodeID, msg.Value.Value())
 			}
 			time.Sleep(lag)
+		default:
+			// log.Println("[WARN] Channel is full, dropping message")
+			continue
 		}
 	}
 }
@@ -183,7 +215,9 @@ func cleanup(ctx context.Context, sub *monitor.Subscription, wg *sync.WaitGroup)
 
 func (c *OpcClient) AddNodes(nodes ...OpcNode) {
 	for _, v := range nodes {
-		c.sub.AddNodes(c.ctx, v.NodeId)
-		if slices.Contains(c.nodes)
+		if !slices.Contains(c.nodes, v) {
+			c.sub.AddNodes(c.ctx, v.NodeId)
+			c.nodes = append(c.nodes, v)
+		}
 	}
 }

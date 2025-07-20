@@ -69,3 +69,20 @@ func (c *sensorController) TranslateData(ctx context.Context, in *manage.SensorT
 	out.Data, err = sManage.ManageSensor().TranslateData(ctx, &in.ManageSensorTranslate)
 	return
 }
+
+func (c *sensorController) SearchSensorDataList(ctx context.Context, in *manage.SensorDataListReq) (out *manage.SensorDataListRes, err error) {
+	out = &manage.SensorDataListRes{}
+	out.Data = &res.SensorDataList{}
+	out.Data, err = sManage.ManageInfluxdb().SearchSensorDataList(ctx, &in.PageListReq, &in.ManageInfluxdbSearch)
+	return
+}
+
+func (c *sensorController) Read(ctx context.Context, in *manage.ReadSensorReq) (out *manage.ReadSensorRes, err error) {
+	out = &manage.ReadSensorRes{}
+	item, err := sManage.ManageSensor().Read(ctx, in.Id)
+	if err != nil {
+		return
+	}
+	out.Data = item
+	return
+}

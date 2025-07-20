@@ -62,6 +62,9 @@ export function useSensorHook() {
         },
         {
             title: '备注', dataIndex: 'remark', formType: 'textarea', width: 200, addDisplay: true, editDisplay: true
+        },
+        {
+            title:"数据列",dataIndex:"view",addDisplay: false, editDisplay: false,width:100
         }
     ])
 

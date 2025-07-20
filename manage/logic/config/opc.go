@@ -323,7 +323,9 @@ func (s *sOpc) ReadData(ctx context.Context, opcId int64) (rs *common.TemplateEn
 		log.Fatalf("Status not OK: %v", resp.Results[0].Status)
 	}
 	rs = &common.TemplateEnv{}
-	rs.Value = resp.Results[0].Value.Value()
+	rs.Value = common.Value{
+		Value: resp.Results[0].Value.Value(),
+	}
 	rs.Type = resp.Results[0].Value.Type().String()
 	rs.CreateTime = resp.Results[0].SourceTimestamp
 

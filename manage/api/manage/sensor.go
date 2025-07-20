@@ -87,3 +87,26 @@ type SensorTranslateRes struct {
 	g.Meta `mime:"application/json"`
 	Data   any `json:"data"  dc:"sensor tree list" `
 }
+
+type SensorDataListReq struct {
+	g.Meta `path:"/sensor/data" tags:"Sensor" method:"get" summary:"转换传感器数据" x-permission:"manage:sensor:data"`
+	model.AuthorHeader
+	req.ManageInfluxdbSearch
+	model.PageListReq
+}
+
+type SensorDataListRes struct {
+	g.Meta `mime:"application/json"`
+	Data   *res.SensorDataList `json:"data"  dc:"sensor data list" `
+}
+
+type ReadSensorReq struct {
+	g.Meta `path:"/sensor/read/{Id}" method:"get" tags:"传感器" summary:"获取传感器." x-permission:"system:sensor:read"`
+	model.AuthorHeader
+	Id int64 `json:"id" dc:"服务 id" v:"required|min:1#设备Id不能为空"`
+}
+
+type ReadSensorRes struct {
+	g.Meta `mime:"application/json"`
+	Data   *res.SensorInfo `json:"data" dc:"服务信息"`
+}

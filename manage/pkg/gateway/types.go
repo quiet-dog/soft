@@ -1,11 +1,6 @@
 package gateway
 
-type Config struct {
-	DeviceId int64  `json:"deviceId"`
-	Host     string `json:"host"`
-	Port     string `json:"port"`
-	Type     string `json:"type"`
-}
+import "time"
 
 const (
 	SERVER_OPC                 = "opc"
@@ -14,3 +9,32 @@ const (
 	SERVER_MODBUS_RTU_OVER_TCP = "modbus_rtu_over_tcp"
 	SERVER_MQTT                = "mqtt"
 )
+
+type Config struct {
+	ServiceId int64         `json:"serviceId"`
+	Host      string        `json:"host"`
+	Port      string        `json:"port"`
+	Type      string        `json:"type"`
+	SubTime   time.Duration `json:"subTime"` // 订阅时间间隔
+}
+
+type Msg struct {
+	Value     Value `json:"value"`
+	ServiceId int64 `json:"serviceId"`
+}
+
+type Value struct {
+	ID         int64       `json:"id"`
+	Value      interface{} `json:"value"`
+	CreateTime time.Time   `json:"createTime"`
+	Type       string      `json:"type"`
+}
+
+func (v *OpcNodes) FindByNodeId(nodeId string) *OpcNode {
+	for _, node := range *v {
+		if node.NodeId == nodeId {
+			return &node
+		}
+	}
+	return nil
+}

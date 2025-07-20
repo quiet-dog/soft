@@ -54,6 +54,7 @@ export default ({ mode }) => {
       cors: {
         origin: env.VITE_APP_BASE_URL,
       },
+      allowedHosts: ["fe98d52fa118.ngrok-free.app"]
     },
   });
 };

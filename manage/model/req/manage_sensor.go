@@ -8,9 +8,10 @@ import (
 )
 
 type ManageSensorSearch struct {
-	Name         string `json:"name" description:"传感器名称"`           // 传感器名称
-	SensorTypeId int64  `json:"sensorTypeId" description:"传感器类型ID"` // 传感器类型ID
-	DeviceId     int64  `json:"deviceId" description:"设备ID"`        // 设备ID
+	Name         string  `json:"name" description:"传感器名称"`           // 传感器名称
+	SensorTypeId int64   `json:"sensorTypeId" description:"传感器类型ID"` // 传感器类型ID
+	DeviceId     int64   `json:"deviceId" description:"设备ID"`        // 设备ID
+	DeviceIds    []int64 `json:"deviceIds" description:"设备ID列表"`     // 设备ID列表
 }
 
 type ManageSensorSave struct {

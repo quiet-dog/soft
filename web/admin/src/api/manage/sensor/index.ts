@@ -1,6 +1,7 @@
 import { http } from "@/utils/http";
 import { BaseIds, Page, TreeLeaf } from "../base";
-import { ReadData, SensorEdit, SensorRow, SensorSearch, TemplateEnv, Translate } from "./types";
+import { InfluxdbData, ReadData, SensorEdit, SensorRow, SensorSearch, TemplateEnv, Translate } from "./types";
+import qs from "qs"
 
 export default {
     list: (params: SensorSearch) => {
@@ -44,5 +45,25 @@ export default {
             method: "post",
             data
         })
+    },
+    data: (params: InfluxdbData) => {
+        return http({
+            url: '/manage/sensor/data',
+            method: 'get',
+            params: {
+                ...params,
+                sensorIds: params.sensorIds[0]
+            },
+            paramsSerializer: params => {
+                return qs.stringify(params, { arrayFormat: 'repeat' })
+            }
+        })
+    },
+    read: (id: number) => {
+        return http<SensorRow>({
+            url: '/manage/sensor/read/' + id,
+            method: 'get',
+
+        });
     }
 }

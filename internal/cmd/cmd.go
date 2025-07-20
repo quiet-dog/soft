@@ -8,8 +8,10 @@ package cmd
 
 import (
 	"context"
+	manageCmd "devinggo/manage/cmd"
 	"devinggo/modules/system/cmd"
 	"devinggo/modules/system/pkg/utils"
+
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gcmd"
 )
@@ -63,7 +65,7 @@ var (
 			cmd.CmdInit(ctx, parser)
 			g.Log().Debug(ctx, "starting all server")
 			// 需要启动的服务
-			var allServers = []*gcmd.Command{cmd.Http, cmd.Worker}
+			var allServers = []*gcmd.Command{cmd.Http, cmd.Worker, manageCmd.DeviceGateway}
 
 			for _, server := range allServers {
 				var cmd = server
@@ -84,7 +86,7 @@ var (
 )
 
 func init() {
-	if err := Main.AddCommand(All, cmd.Http, cmd.Version, cmd.Worker, cmd.Unpack, cmd.MigrateUp, cmd.MigrateDown, cmd.MigrateGoto, cmd.MigrateCreate, cmd.MigrateForce, cmd.CreateModule, cmd.ExportModule,cmd.ImportModule, Help); err != nil {
+	if err := Main.AddCommand(All, cmd.Http, cmd.Version, cmd.Worker, cmd.Unpack, cmd.MigrateUp, cmd.MigrateDown, cmd.MigrateGoto, cmd.MigrateCreate, cmd.MigrateForce, cmd.CreateModule, cmd.ExportModule, cmd.ImportModule, Help); err != nil {
 		panic(err)
 	}
 }

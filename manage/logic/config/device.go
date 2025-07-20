@@ -142,5 +142,9 @@ func (s *sDevice) handleDeviceSearch(ctx context.Context, in *req.ManageDeviceSe
 		query = query.WhereLike("model", "%"+in.Model+"%")
 	}
 
+	if in.ServerId > 0 {
+		query = query.Where("server_id", in.ServerId)
+	}
+
 	return
 }

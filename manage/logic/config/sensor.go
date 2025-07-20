@@ -14,6 +14,7 @@ import (
 	"devinggo/modules/system/model"
 	"devinggo/modules/system/pkg/orm"
 	"devinggo/modules/system/pkg/utils"
+	"fmt"
 
 	"github.com/expr-lang/expr"
 	"github.com/gogf/gf/v2/database/gdb"
@@ -89,6 +90,10 @@ func (s *sSensor) handleSensorSearch(ctx context.Context, in *req.ManageSensorSe
 		query = query.WhereLike("name", "%"+in.Name+"%")
 	}
 
+	if len(in.DeviceIds) > 0 {
+		query = query.WhereIn("device_id", in.DeviceIds)
+	}
+
 	return
 }
 
@@ -104,17 +109,42 @@ func (s *sSensor) ReadData(ctx context.Context, in *req.ManageSensorReadData) (o
 	return
 }
 
-func (s *sSensor) TranslateData(ctx context.Context, in *req.ManageSensorTranslate) (out any, err error) {
+func (s *sSensor) TranslateData(ctx context.Context, in *req.ManageSensorTranslate) (out common.Value, err error) {
+	out = common.Value{}
+	if in.Template == "" {
+		return in.Env.Value, nil
+	}
 	program, err := expr.Compile(in.Template, expr.Env(in.Env.PrepareExprEnv()))
 	if err != nil {
 		return
 	}
-	out, err = expr.Run(program, in.Env.PrepareExprEnv())
-	s.ReadInfluxdbFormat(ctx, 48)
+	result, err := expr.Run(program, in.Env.PrepareExprEnv())
+	// s.ReadInfluxdbFormat(ctx, 48)
+	out.Value = result
 	return
 }
 
 func (s *sSensor) ReadInfluxdbFormat(ctx context.Context, sensorId int64) (out *common.SensorToInfluxdb, err error) {
-	err = s.Model(ctx).Fields("device_id", "sensor_type_id", "id as sensor_id", "template").Scan(&out)
+	fmt.Println("===========")
+	out = &common.SensorToInfluxdb{}
+	r, err := s.Read(ctx, sensorId)
+	if err != nil {
+		return
+	}
+	out.DeviceId = r.DeviceId
+	out.SensorId = r.Id
+	out.SensorTypeId = r.SensorTypeId
+	out.Template = r.Template
+	fmt.Println(out.Template, sensorId)
+	// os.Exit(0)
+	return
+}
+
+func (s *sSensor) Read(ctx context.Context, sensorId int64) (sensorInfo *res.SensorInfo, err error) {
+	sensorInfo = &res.SensorInfo{}
+	err = s.Model(ctx).Where(dao.ManageSensor.Columns().Id, sensorId).Scan(&sensorInfo)
+	if utils.IsError(err) {
+		return
+	}
 	return
 }

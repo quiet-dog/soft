@@ -62,7 +62,7 @@ const data = computed(() => {
     return [
         {
             label: "值",
-            value: sensorData.value?.value
+            value: sensorData.value?.value.value
         }, {
             label: "值类型",
             value: sensorData.value?.type
@@ -83,11 +83,11 @@ function handleClose() {
     templateInfo.extend = ""
 }
 
-function translateData(){
+function translateData() {
     sensor.translate({
-        env:sensorData.value!,
-        template:code.value
-    }).then(res=>{
+        env: sensorData.value!,
+        template: code.value
+    }).then(res => {
         Message.success(String(res.data))
     })
 }

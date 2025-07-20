@@ -3,6 +3,9 @@ import sensorType from '@/api/manage/sensorType';
 
 export interface SensorAdd {
     name: string;
+    deviceId: number;
+    extend?: any;
+    remark?: string;
     sensorTypeId: number;
 }
 
@@ -24,9 +27,12 @@ export interface ReadData {
     type: string;
 }
 
+export interface Value {
+    value: any;
+}
 
 export interface TemplateEnv {
-    value: any;
+    value: Value;
     type: string;
     createTime: string
 }
@@ -45,4 +51,11 @@ export interface SensorTreeLeaf {
 
 export interface OpcExtend {
     id: number
+}
+
+export interface InfluxdbData extends BasePageReq {
+    sensorIds: number[];
+    deviceId: number;
+    beginTime: string;
+    endTime: string;
 }

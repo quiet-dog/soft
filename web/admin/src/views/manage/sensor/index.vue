@@ -1,15 +1,23 @@
 <script lang='ts' setup>
 import { useSensorHook } from '.';
 import Template from "@/package/template/index.vue"
+import InSensor from "@/components/in-sensor/index.vue"
+import { ref } from 'vue';
 
 const { crud, columns,
     crudRef, changeSensorType, loadSensorOptions,
     sensorTypeOptions, deviceOptions,
     loadDeviceOptions, changeDevice, asyncComponent,
-    visible, asyncDeviceId, changeExtend,templateVisable,
-    templateInfo,changeTemplate
+    visible, asyncDeviceId, changeExtend, templateVisable,
+    templateInfo, changeTemplate
 } = useSensorHook()
 
+const sensorDataVisible = ref(false)
+const sensorDataId = ref(0)
+function changeSensorData(id: number) {
+    sensorDataId.value = id
+    sensorDataVisible.value = true
+}
 
 </script>
 
@@ -31,9 +39,15 @@ const { crud, columns,
                     </a-option>
                 </a-select>
             </template>
+
+            <template #view="{ record }">
+                <AButton type="primary" @click="changeSensorData(record.id)">查看</AButton>
+            </template>
         </ma-crud>
         <component :is="asyncComponent" :deviceId="asyncDeviceId" @changeExtend="changeExtend" />
-        <Template v-model:model-value="templateVisable" :templateInfo="templateInfo" @change-template="changeTemplate" />
+        <Template v-model:model-value="templateVisable" :templateInfo="templateInfo"
+            @change-template="changeTemplate" />
+        <InSensor v-model:model-value="sensorDataVisible" :sensor-id="sensorDataId" />
     </div>
 </template>
 

@@ -11,6 +11,7 @@ import (
 	"devinggo/manage/model/req"
 	"devinggo/manage/model/res"
 	"devinggo/manage/model/res/device"
+	"devinggo/manage/pkg/gateway"
 	"devinggo/modules/system/model"
 )
 
@@ -62,16 +63,22 @@ type (
 		Delete(ctx context.Context, ids []int64) (err error)
 		Tree(ctx context.Context, req *model.PageListReq, in *req.ManageSensorSearch) (rs []*res.AreaTree, err error)
 		ReadData(ctx context.Context, req *req.ManageSensorReadData) (rs *common.TemplateEnv, err error)
-		TranslateData(ctx context.Context, req *req.ManageSensorTranslate) (rs any, err error)
+		TranslateData(ctx context.Context, req *req.ManageSensorTranslate) (rs common.Value, err error)
 		ReadInfluxdbFormat(ctx context.Context, sensorId int64) (out *common.SensorToInfluxdb, err error)
+		Read(ctx context.Context, sensorId int64) (sensorInfo *res.SensorInfo, err error)
 	}
 
 	IManageOpc interface {
 		InitOpc(ctx context.Context, serverId int64) (result []*device.OpcTree, err error)
 		Tree(ctx context.Context, in *req.OpcTreeReq) (rs []*res.OpcTree, err error)
+		ReadData(ctx context.Context, opcId int64) (rs *common.TemplateEnv, err error)
+		Read(ctx context.Context, opcId int64) (opcInfo *res.OpcInfo, err error)
 	}
 
 	IManageInfluxdb interface {
+		StoreDataChannel(ctx context.Context, msg gateway.Msg) (err error)
+		Store(ctx context.Context, data common.TemplateEnv, sensorId int64) (err error)
+		SearchSensorDataList(ctx context.Context, req *model.PageListReq, in *req.ManageInfluxdbSearch) (out *res.SensorDataList, err error)
 	}
 )
 
