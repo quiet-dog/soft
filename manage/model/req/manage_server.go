@@ -13,5 +13,6 @@ type ManageServerSave struct {
 	Port     string `json:"port" description:"服务器端口"`                             // 服务器端口
 	Username string `json:"username" description:"服务器用户名"`                        // 服务器用户名
 	Password string `json:"password" description:"服务器密码"`                         // 服务器密码
+	Interval int64  `json:"interval" description:"采集间隔"`                          // 采集间隔
 	Remark   string `json:"remark" description:"备注"`                              // 备注
 }

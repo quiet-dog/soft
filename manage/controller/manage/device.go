@@ -67,3 +67,9 @@ func (c *deviceController) Read(ctx context.Context, in *manage.ReadDeviceReq) (
 	out.Data = item
 	return
 }
+
+func (c *deviceController) TestConnect(ctx context.Context, in *manage.DeviceTestConnectReq) (out *manage.DeviceTestConnectRes, err error) {
+	out = &manage.DeviceTestConnectRes{}
+	err = sManage.ManageDevice().TestConnect(ctx, &in.DeviceTestConnectReq)
+	return
+}

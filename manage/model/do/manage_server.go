@@ -15,7 +15,7 @@ type ManageServer struct {
 	Id        interface{} // 主键
 	Name      interface{} // 服务器名称
 	Ip        interface{} // 服务器ip
-	Prot      interface{} // 端口
+	Port      interface{} // 端口
 	Type      interface{} // 服务器类型
 	Username  interface{} // 服务器用户名
 	Password  interface{} // 服务器密码
@@ -25,4 +25,5 @@ type ManageServer struct {
 	UpdatedAt *gtime.Time // 更新时间
 	DeletedAt *gtime.Time // 删除时间
 	Remark    interface{} // 备注
+	Interval  interface{} //
 }

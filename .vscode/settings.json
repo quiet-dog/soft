@@ -55,5 +55,9 @@
   },
   "i18n-ally.localesPaths": [
     "**/*/i18n",
- ]
+],
+"python.languageServer": "None",
+"[python]": {
+  "editor.defaultFormatter": "ms-python.autopep8"
+}
 }

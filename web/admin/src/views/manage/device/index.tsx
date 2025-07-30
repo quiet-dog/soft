@@ -15,6 +15,12 @@ export async function getAsyncServerConfigComponent(serverId: number) {
         })
     }
 
+    if (res.data?.type.includes('modbus')) {
+        return defineAsyncComponent(() => {
+            return import("@/package/device/modbus/index.vue")
+        })
+    }
+
 }
 
 export function useDeviceHook() {

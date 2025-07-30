@@ -75,3 +75,13 @@ type ReadDeviceRes struct {
 	g.Meta `mime:"application/json"`
 	Data   *res.DeviceInfo `json:"data" dc:"设备信息"`
 }
+
+type DeviceTestConnectReq struct {
+	g.Meta `path:"/device/test" tags:"Device" method:"post" summary:"测试设备连通性" x-permission:"manage:device:test"`
+	model.AuthorHeader
+	req.DeviceTestConnectReq
+}
+
+type DeviceTestConnectRes struct {
+	g.Meta `mime:"application/json"`
+}

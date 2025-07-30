@@ -7,6 +7,7 @@ import (
 	"devinggo/manage/service/manage"
 	"devinggo/modules/system/model"
 	"fmt"
+	"time"
 
 	"github.com/gogf/gf/v2/encoding/gjson"
 )
@@ -20,44 +21,74 @@ func InitDeviceGateway() {
 		panic(err)
 	}
 	for _, server := range l {
-		if server.Type == gateway.SERVER_OPC {
-			cfg := gateway.Config{
-				Host: server.Ip,
-				Port: server.Port,
-				Type: server.Type,
-			}
 
-			DeviceGateway.AddClient(server.Id, cfg)
-			c, ok := DeviceGateway.Client(server.Id)
-			if !ok {
-				// panic("Failed to get client for server ID: " + string(server.Id))
-				continue
-			}
-			devices, _, err := manage.ManageDevice().GetPageListForSearch(context.Background(), &model.PageListReq{}, &req.ManageDeviceSearch{
-				ServerId: server.Id,
-			})
-			if err != nil {
-				continue
-			}
-			deviceIds := make([]int64, 0, len(devices))
-			for _, device := range devices {
-				deviceIds = append(deviceIds, device.Id)
-			}
-			sensors, _, _ := manage.ManageSensor().GetPageListForSearch(context.Background(), &model.PageListReq{}, &req.ManageSensorSearch{})
+		duration := server.Interval * int64(time.Second)
+		cfg := gateway.Config{
+			Host:    server.Ip,
+			Port:    server.Port,
+			Type:    server.Type,
+			SubTime: time.Duration(duration),
+		}
+
+		DeviceGateway.AddClient(server.Id, cfg)
+		c, ok := DeviceGateway.Client(server.Id)
+		if !ok {
+			// panic("Failed to get client for server ID: " + string(server.Id))
+			continue
+		}
+		devices, _, err := manage.ManageDevice().GetPageListForSearch(context.Background(), &model.PageListReq{}, &req.ManageDeviceSearch{
+			ServerId: server.Id,
+		})
+		if err != nil {
+			continue
+		}
+		deviceIds := make([]int64, 0, len(devices))
+		for _, device := range devices {
+			deviceIds = append(deviceIds, device.Id)
+		}
+		sensors, _, _ := manage.ManageSensor().GetPageListForSearch(context.Background(), &model.PageListReq{}, &req.ManageSensorSearch{})
+
+		if server.Type == gateway.SERVER_OPC {
+
 			for _, sensor := range sensors {
 				opc, err := manage.ManageOpc().Read(context.Background(), sensor.Extend.Get("id").Int64())
 				if err != nil {
 					continue
 				}
-				jsonB, err := gjson.Marshal(map[string]interface{}{
-					"id":     sensor.Id,
-					"nodeId": opc.NodeId,
-				})
-				if err != nil {
-					continue
-				}
-				c.AddNodes(string(jsonB))
+
+				g := gjson.New(nil, false)
+				g.Set("id", sensor.Id)
+				g.Set("nodeId", opc.NodeId)
+				// jsonB, err := gjson.Marshal(map[string]interface{}{
+				// 	"id":     sensor.Id,
+				// 	"nodeId": opc.NodeId,
+				// })
+				// if err != nil {
+				// 	continue
+				// }
+				c.AddNodes(g)
 			}
+
+		} else if server.Type == gateway.SERVER_MODBUS_TCP {
+			node := []*gjson.Json{}
+			for _, device := range devices {
+				deviceJson := gjson.New(nil)
+				sensorMap := make(map[int64]gateway.ModbusSensor)
+				for _, sensor := range sensors {
+					if sensor.DeviceId == device.Id {
+						deviceJson.Set("deviceId", device.Id)
+						deviceJson.Set("slaveId", device.Extend.Get("slave").Uint16())
+						sensorMap[sensor.Id] = gateway.ModbusSensor{
+							StartAddress: sensor.Extend.Get("start").Uint16(),
+							Quantity:     sensor.Extend.Get("quantity").Uint16(),
+							SensorId:     sensor.Id,
+						}
+					}
+				}
+				deviceJson.Set("sensors", sensorMap)
+				node = append(node, deviceJson)
+			}
+			c.AddNodes(node...)
 
 		} else {
 			// panic("Unsupported gateway type: " + server.Type)

@@ -24,7 +24,7 @@ type ManageServerColumns struct {
 	Id        string // 主键
 	Name      string // 服务器名称
 	Ip        string // 服务器ip
-	Prot      string // 端口
+	Port      string // 端口
 	Type      string // 服务器类型
 	Username  string // 服务器用户名
 	Password  string // 服务器密码
@@ -34,6 +34,7 @@ type ManageServerColumns struct {
 	UpdatedAt string // 更新时间
 	DeletedAt string // 删除时间
 	Remark    string // 备注
+	Interval  string //
 }
 
 // manageServerColumns holds the columns for the table manage_server.
@@ -41,7 +42,7 @@ var manageServerColumns = ManageServerColumns{
 	Id:        "id",
 	Name:      "name",
 	Ip:        "ip",
-	Prot:      "prot",
+	Port:      "port",
 	Type:      "type",
 	Username:  "username",
 	Password:  "password",
@@ -51,6 +52,7 @@ var manageServerColumns = ManageServerColumns{
 	UpdatedAt: "updated_at",
 	DeletedAt: "deleted_at",
 	Remark:    "remark",
+	Interval:  "interval",
 }
 
 // NewManageServerDao creates and returns a new DAO object for table data access.

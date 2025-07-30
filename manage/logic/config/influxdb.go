@@ -13,6 +13,7 @@ import (
 	"devinggo/modules/system/pkg/utils"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/InfluxCommunity/influxdb3-go/v2/influxdb3"
 )
@@ -32,8 +33,9 @@ func NewManageInfluxdb() *sInfluxdb {
 
 func (s *sInfluxdb) Model(ctx context.Context) (*influxdb3.Client, error) {
 	client, err := influxdb3.New(influxdb3.ClientConfig{
-		Host:     "http://localhost:8181",
-		Token:    "apiv3_m5pZL1Z_fuVx4oEKwkwSiL5qyIYu3CQrih5394FoDuURdYxPqwtWO3IYiZG06-0AXysYINo_f46Pi5-xDQa-pw",
+		Host: "http://localhost:8181",
+		// Token:    "apiv3_m5pZL1Z_fuVx4oEKwkwSiL5qyIYu3CQrih5394FoDuURdYxPqwtWO3IYiZG06-0AXysYINo_f46Pi5-xDQa-pw",
+		Token:    "apiv3_KDfgrll4Hg3VKFpOt5wLOtStjWSmZNeIcW-obG1SYJGc5W2OAZRrH-pXq_5Q-_E7LT0bhKwcMOglg-Ml2J3EJg",
 		Database: "DATABASE_NAME",
 	})
 	if err != nil {
@@ -55,6 +57,39 @@ func (s *sInfluxdb) SearchSensorDataList(ctx context.Context, req *model.PageLis
 	if utils.IsError(err) {
 		return nil, err
 	}
+	return
+}
+
+func (s *sInfluxdb) SearchSensorEchart(ctx context.Context, re *model.PageListReq, in *req.ManageInfluxdbOneSensorSearch) (out *res.SensorDataList, err error) {
+	out = &res.SensorDataList{}
+	dao.ManageSensor.Ctx(ctx).As("s").Fields("s.device_id", "s.sensor_type_id",
+		"s.id as sensor_id", "st.name as sensor_type_name",
+		"s.name as sensor_name", "st.unit as sensor_unit").
+		LeftJoin("manage_sensor_type st", "st.id = s.sensor_type_id").
+		LeftJoin("manage_device d", "d.id = s.device_id").
+		Where("s.id", in.SensorId).Scan(&out)
+	i := &req.ManageInfluxdbSearch{
+		DeviceId:  out.DeviceId,
+		SensorIds: []int64{in.SensorId},
+		BeginTime: in.BeginTime,
+		EndTime:   in.EndTime,
+		Precision: in.Precision,
+	}
+
+	out.Rows, out.Total, err = s.SearchTable(ctx, re, i)
+	// if err != nil {
+	// 	return
+	// }
+
+	// for _, v := range list {
+	// 	out.CSeriesData = append(out.CSeriesData, v[fmt.Sprintf("c_%d", in.SensorId)])
+	// 	out.ESeriesData = append(out.ESeriesData, v[fmt.Sprintf("e_%d", in.SensorId)])
+	// 	out.XData = append(out.XData, v["time"])
+	// }
+
+	// if utils.IsError(err) {
+	// 	return nil, err
+	// }
 	return
 }
 
@@ -103,17 +138,17 @@ func (s *sInfluxdb) Store(ctx context.Context, data common.TemplateEnv, sensorId
 	}
 	fmt.Println("====================", influxdbData.Template)
 
-	currend := data.Value.ToValueInfluxdb()
+	current := data.Value.ToValueInfluxdb()
 	// line := "1,sensor=2 value=23.5,current=45i"
-	line := fmt.Sprintf("t_%d,sensor=s_%d c_%d=%s,e_%d=%s",
+	line := fmt.Sprintf("t_%d,sensor=s_%d c_%d=%s,e_%d=%s %d",
 		influxdbData.DeviceId,
 		influxdbData.SensorId,
 		influxdbData.SensorId,
-		currend,
+		current,
 		influxdbData.SensorId,
 		data.Value.ToValueExprInfluxdb(influxdbData.Template),
+		data.CreateTime.UnixNano(),
 	)
-	fmt.Println(influxdbData.Template)
 	fmt.Println(line)
 	err = c.Write(ctx, []byte(line))
 	return
@@ -164,7 +199,7 @@ func (s *sInfluxdb) handleInfluxdbSearch(ctx context.Context, req *model.PageLis
 
 	// 时间范围
 	if in.BeginTime != 0 && in.EndTime != 0 {
-		timeCond := fmt.Sprintf("time >= %d and time <= %d", in.BeginTime, in.EndTime)
+		timeCond := fmt.Sprintf("time >= '%s' and time <= '%s'", time.UnixMilli(in.BeginTime).Format(time.RFC3339), time.UnixMilli(in.EndTime).Format(time.RFC3339))
 		if conditions != "" {
 			conditions += " AND " + timeCond
 		} else {
@@ -177,6 +212,12 @@ func (s *sInfluxdb) handleInfluxdbSearch(ctx context.Context, req *model.PageLis
 		total += " WHERE " + conditions
 	}
 
+	if in.Precision != 0 {
+		line += fmt.Sprintf(" GROUP BY time(%ds) ", in.Precision)
+		line = strings.Replace(line, "SELECT *", `SELECT MEAN("*")`, 1)
+		total = strings.Replace(line, "SELECT COUNT(*)", `SELECT COUNT(MEAN("*"))`, 1)
+	}
+
 	// 排序
 	line += " ORDER BY time DESC"
 
@@ -187,6 +228,7 @@ func (s *sInfluxdb) handleInfluxdbSearch(ctx context.Context, req *model.PageLis
 			line += fmt.Sprintf(" OFFSET %d", (req.Page-1)*req.PageSize)
 		}
 	}
+	fmt.Println("InfluxDB Query Line:==========================")
 	fmt.Println("InfluxDB Query Line:", line)
 	fmt.Println("InfluxDB Total Query Line:", total)
 	// os.Exit(0)

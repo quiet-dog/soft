@@ -15,6 +15,7 @@ import (
 	"devinggo/modules/system/pkg/orm"
 	"devinggo/modules/system/pkg/utils"
 	"fmt"
+	"time"
 
 	"github.com/expr-lang/expr"
 	"github.com/gogf/gf/v2/database/gdb"
@@ -106,6 +107,12 @@ func (s *sSensor) ReadData(ctx context.Context, in *req.ManageSensorReadData) (o
 		}
 	}
 
+	if in.Type == gateway.SERVER_MODBUS_TCP && !in.Extend.IsNil() {
+		if deviceId := in.Extend.Get("deviceId").Int64(); deviceId != 0 {
+			out, err = manage.ManageModbus().TestDataByDeviceId(ctx, deviceId, in)
+		}
+	}
+
 	return
 }
 
@@ -146,5 +153,30 @@ func (s *sSensor) Read(ctx context.Context, sensorId int64) (sensorInfo *res.Sen
 	if utils.IsError(err) {
 		return
 	}
+	return
+}
+
+func (s *sSensor) ReadEchart(ctx context.Context, re *model.PageListReq, in *req.ManageInfluxdbOneSensorSearch) (out *res.SensorEchart, err error) {
+	out = &res.SensorEchart{}
+	info, err := manage.ManageInfluxdb().SearchSensorEchart(ctx, re, in)
+	if err != nil {
+		return
+	}
+
+	out.SensorId = info.SensorId
+	out.DeviceId = info.DeviceId
+	out.SensorName = info.SensorName
+	out.SensorTypeId = info.SensorTypeId
+	out.SensorTypeName = info.SensorTypeName
+	out.SensorUnit = info.SensorUnit
+	for _, v := range info.Rows {
+		out.CSeriesData = append(out.CSeriesData, v[fmt.Sprintf("c_%d", in.SensorId)])
+		out.ESeriesData = append(out.ESeriesData, v[fmt.Sprintf("e_%d", in.SensorId)])
+		// out.XData = append(out.XData, v["time"])
+		if tt, ok := v["time"].(time.Time); ok {
+			out.XData = append(out.XData, tt.UTC().Format("2006-01-02 15:04:05"))
+		}
+	}
+
 	return
 }

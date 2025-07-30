@@ -35,3 +35,10 @@ export interface DeviceTreeLeaf {
     pageInfo: DeviceSearch;
     items: TreeLeaf[];
 }
+
+
+
+export interface DeviceTest {
+    serverId: number;
+    extend: string;
+}

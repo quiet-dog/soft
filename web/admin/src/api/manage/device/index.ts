@@ -1,6 +1,6 @@
 import { http } from "@/utils/http";
 import { BaseIds, Page, TreeLeaf } from "../base";
-import { DeviceEdit, DeviceRead, DeviceRow, DeviceSearch } from "./types";
+import { DeviceEdit, DeviceRead, DeviceRow, DeviceSearch, DeviceTest } from "./types";
 
 export default {
     list: (params: DeviceSearch) => {
@@ -36,5 +36,12 @@ export default {
             url: '/manage/device/read/' + id,
             method: 'get',
         });
+    },
+    test: (data: DeviceTest) => {
+        return http({
+            url: '/manage/device/test',
+            method: 'post',
+            data
+        })
     }
 }

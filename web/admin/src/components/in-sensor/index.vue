@@ -1,7 +1,9 @@
 <script lang='ts' setup>
 import sensor from '@/api/manage/sensor';
 import { InfluxdbData } from '@/api/manage/sensor/types';
+import { TableColumnData } from '@arco-design/web-vue';
 import { onMounted, ref } from 'vue';
+import InEchart from "./in-echart/index.vue";
 
 
 const visible = defineModel({
@@ -23,7 +25,7 @@ const params = ref<InfluxdbData>(
         pageSize: 10
     })
 
-const columns = ref([])
+const columns = ref<TableColumnData[]>([])
 const data = ref([])
 const pageInfo = ref({
     total: 0,
@@ -67,6 +69,16 @@ function changePage() {
     })
 }
 
+const inEchartRef = ref<typeof InEchart>()
+
+function changeTabs(value){
+    if(value == "1"){
+
+    }else if(value=="2"){
+        inEchartRef.value.render()
+    }
+}
+
 onMounted(() => {
     sensor.data(params.value).then(res => {
         console.log(res.data);
@@ -80,14 +92,14 @@ onMounted(() => {
 <template>
     <AModal v-model:visible="visible" @before-open="beforeOpen" title="查看数据" width="60%">
         <div>
-            <ATabs>
+            <ATabs @change="changeTabs">
                 <ATabPane key="1" title="数据详情">
                     <ATable :pagination="false" :columns="columns" :data="data"></ATable>
                     <APagination @change="changePage" v-model:current="pageInfo.page"
                         v-model:page-size="pageInfo.pageSize" :total="pageInfo.total" />
                 </ATabPane>
                 <ATabPane key="2" title="数据图表">
-
+                    <InEchart ref="inEchartRef" :sensor-id="sensorId" />
                 </ATabPane>
             </ATabs>
         </div>

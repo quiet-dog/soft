@@ -28,3 +28,8 @@ type ManageDeviceSave struct {
 type ManageDeviceDelete struct {
 	base.BaseIds
 }
+
+type DeviceTestConnectReq struct {
+	ServerId int64       `json:"serverId" v:"required|max-length:255" description:"服务id"` // 设备id
+	Extend   *gjson.Json `json:"extend" description:"扩展信息"`                               // 扩展信息
+}

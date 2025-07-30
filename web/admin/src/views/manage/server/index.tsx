@@ -31,7 +31,7 @@ export default function useServerHook() {
             ]
         },
         {
-            title: '端口', dataIndex: 'port', formType: 'input-number', search: true, width: 150, addDisplay: true, editDisplay: true, commonRules: [
+            title: '端口', dataIndex: 'port', formType: 'input', search: true, width: 150, addDisplay: true, editDisplay: true, commonRules: [
                 { required: true, message: '请输入端口' },
             ]
         },
@@ -42,6 +42,11 @@ export default function useServerHook() {
             dict: {
                 url: '/manage/server/types',
             }
+        },
+        {
+            title: '采集间隔', dataIndex: 'interval', formType: 'input-number', search: false, width: 150, addDisplay: true, editDisplay: true, commonRules: [
+                { required: true, message: '请设置采集间隔' },
+            ],
         },
         {
             title: '用户名', dataIndex: 'username', formType: 'input', width: 150, addDisplay: true, editDisplay: true, commonRules: [

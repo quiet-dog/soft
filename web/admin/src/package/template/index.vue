@@ -58,11 +58,19 @@ function beforeOpen() {
     })
 }
 
+function formatValue(value){
+    if(Array.isArray(value)){
+        // 按照，隔开
+        return value.join(",")
+    }
+    return value
+}
+
 const data = computed(() => {
     return [
         {
             label: "值",
-            value: sensorData.value?.value.value
+            value:formatValue(sensorData.value?.value.value)
         }, {
             label: "值类型",
             value: sensorData.value?.type
@@ -88,7 +96,7 @@ function translateData() {
         env: sensorData.value!,
         template: code.value
     }).then(res => {
-        Message.success(String(res.data))
+        Message.success(String(res.data.value))
     })
 }
 

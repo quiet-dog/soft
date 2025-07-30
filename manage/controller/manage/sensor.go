@@ -86,3 +86,9 @@ func (c *sensorController) Read(ctx context.Context, in *manage.ReadSensorReq) (
 	out.Data = item
 	return
 }
+
+func (c *sensorController) ReadEchart(ctx context.Context, in *manage.ReadEchartSensorReq) (out *manage.ReadEchartSensorRes, err error) {
+	out = &manage.ReadEchartSensorRes{}
+	out.Data, err = sManage.ManageSensor().ReadEchart(ctx, &in.PageListReq, &in.ManageInfluxdbOneSensorSearch)
+	return
+}

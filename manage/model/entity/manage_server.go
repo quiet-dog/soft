@@ -13,7 +13,7 @@ type ManageServer struct {
 	Id        int64       `json:"id"        orm:"id"         description:"主键"`     // 主键
 	Name      string      `json:"name"      orm:"name"       description:"服务器名称"`  // 服务器名称
 	Ip        string      `json:"ip"        orm:"ip"         description:"服务器ip"`  // 服务器ip
-	Prot      string      `json:"prot"      orm:"prot"       description:"端口"`     // 端口
+	Port      string      `json:"port"      orm:"port"       description:"端口"`     // 端口
 	Type      string      `json:"type"      orm:"type"       description:"服务器类型"`  // 服务器类型
 	Username  string      `json:"username"  orm:"username"   description:"服务器用户名"` // 服务器用户名
 	Password  string      `json:"password"  orm:"password"   description:"服务器密码"`  // 服务器密码
@@ -23,4 +23,5 @@ type ManageServer struct {
 	UpdatedAt *gtime.Time `json:"updatedAt" orm:"updated_at" description:"更新时间"`   // 更新时间
 	DeletedAt *gtime.Time `json:"deletedAt" orm:"deleted_at" description:"删除时间"`   // 删除时间
 	Remark    string      `json:"remark"    orm:"remark"     description:"备注"`     // 备注
+	Interval  int64       `json:"interval"  orm:"interval"   description:""`       //
 }

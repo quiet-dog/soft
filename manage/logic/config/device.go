@@ -6,14 +6,20 @@ import (
 	"devinggo/manage/model/do"
 	"devinggo/manage/model/req"
 	"devinggo/manage/model/res"
+	"devinggo/manage/pkg/gateway"
 	"devinggo/manage/pkg/hook"
 	"devinggo/manage/service/manage"
 	"devinggo/modules/system/logic/base"
 	"devinggo/modules/system/model"
 	"devinggo/modules/system/pkg/orm"
 	"devinggo/modules/system/pkg/utils"
+	"fmt"
+	"net/url"
+	"time"
 
+	"github.com/goburrow/modbus"
 	"github.com/gogf/gf/v2/database/gdb"
+	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 )
@@ -120,6 +126,15 @@ func (s *sDevice) Read(ctx context.Context, deviceId int64) (deviceInfo *res.Dev
 	return
 }
 
+func (s *sDevice) TestConnect(ctx context.Context, req *req.DeviceTestConnectReq) (err error) {
+
+	serverInfo, err := manage.ManageServer().Read(ctx, req.ServerId)
+	if err != nil {
+		return
+	}
+	return s.handleDeviceConnect(serverInfo, req.Extend)
+}
+
 func (s *sDevice) handleDeviceSearch(ctx context.Context, in *req.ManageDeviceSearch) (query *gdb.Model) {
 	query = s.Model(ctx)
 	if in == nil {
@@ -146,5 +161,75 @@ func (s *sDevice) handleDeviceSearch(ctx context.Context, in *req.ManageDeviceSe
 		query = query.Where("server_id", in.ServerId)
 	}
 
+	return
+}
+
+func (s *sDevice) handleDeviceConnect(serverInfo *res.ServerInfo, extend *gjson.Json) (err error) {
+	switch serverInfo.Type {
+	case gateway.SERVER_MODBUS_TCP:
+		{
+			err = s.handleModbusTcp(serverInfo, extend.Get("slave").Int())
+		}
+	case gateway.SERVER_MODBUS_RTU:
+		{
+			err = s.handleModbusRtu(serverInfo, extend.Get("slave").Int())
+		}
+	case gateway.SERVER_MODBUS_RTU_OVER_TCP:
+		{
+			err = s.handleModbusRtuOverTcp(serverInfo, extend.Get("slave").Int())
+		}
+	}
+	return
+}
+
+// modbus tcp
+func (s *sDevice) handleModbusTcp(serverInfo *res.ServerInfo, slave int) (err error) {
+	url := fmt.Sprintf("%s:%s", serverInfo.Ip, serverInfo.Port)
+	handler := modbus.NewTCPClientHandler(url)
+	handler.SlaveId = byte(slave)
+	handler.Timeout = 5 * time.Second
+
+	err = handler.Connect()
+	if err != nil {
+		return
+	}
+	defer handler.Close()
+
+	client := modbus.NewClient(handler)
+	rs, err := client.ReadHoldingRegisters(0, 1)
+	if err != nil {
+		return
+	}
+	fmt.Println("rs====================", rs)
+	return
+}
+
+// modbus rtu
+func (s *sDevice) handleModbusRtu(serverInfo *res.ServerInfo, slave int) (err error) {
+	// handle := modbus.NewRTUClientHandler(sensor)
+	// handle.BaudRate = baudRate
+
+	return
+}
+
+// modbus rtu_over_tcp
+func (s *sDevice) handleModbusRtuOverTcp(serverInfo *res.ServerInfo, slave int) (err error) {
+	u, err := url.Parse(fmt.Sprintf("%s:%s", serverInfo.Ip, serverInfo.Port))
+	if err != nil {
+		return
+	}
+
+	handler := modbus.NewTCPClientHandler(u.String())
+	handler.SlaveId = byte(slave)
+	handler.Timeout = 5 * time.Second
+
+	err = handler.Connect()
+	if err != nil {
+		return
+	}
+	defer handler.Close()
+	// r := modbus.NewRTUClientHandler("")
+
+	// c := modbus.NewClient2(r, handler)
 	return
 }

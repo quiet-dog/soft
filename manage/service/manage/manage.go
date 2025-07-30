@@ -47,6 +47,7 @@ type (
 		GetInfoById(ctx context.Context, deviceId int64) (DeviceInfo *res.DeviceInfo, err error)
 		GetInfoByIds(ctx context.Context, deviceIds []int64) (DeviceInfos []*res.DeviceInfo, err error)
 		Read(ctx context.Context, deviceId int64) (DeviceInfo *res.DeviceInfo, err error)
+		TestConnect(ctx context.Context, in *req.DeviceTestConnectReq) (err error)
 		// GetOpc(ctx context.Context, deviceId int64) (opc *res.OpcInfo, err error)
 	}
 
@@ -66,6 +67,7 @@ type (
 		TranslateData(ctx context.Context, req *req.ManageSensorTranslate) (rs common.Value, err error)
 		ReadInfluxdbFormat(ctx context.Context, sensorId int64) (out *common.SensorToInfluxdb, err error)
 		Read(ctx context.Context, sensorId int64) (sensorInfo *res.SensorInfo, err error)
+		ReadEchart(ctx context.Context, re *model.PageListReq, in *req.ManageInfluxdbOneSensorSearch) (out *res.SensorEchart, err error)
 	}
 
 	IManageOpc interface {
@@ -79,6 +81,11 @@ type (
 		StoreDataChannel(ctx context.Context, msg gateway.Msg) (err error)
 		Store(ctx context.Context, data common.TemplateEnv, sensorId int64) (err error)
 		SearchSensorDataList(ctx context.Context, req *model.PageListReq, in *req.ManageInfluxdbSearch) (out *res.SensorDataList, err error)
+		SearchSensorEchart(ctx context.Context, re *model.PageListReq, in *req.ManageInfluxdbOneSensorSearch) (out *res.SensorDataList, err error)
+	}
+
+	IManageModbus interface {
+		TestDataByDeviceId(ctx context.Context, deviceId int64, in *req.ManageSensorReadData) (rs *common.TemplateEnv, err error)
 	}
 )
 
@@ -91,6 +98,7 @@ var (
 	localManageSensor     IManageSensor
 	localManageOpc        IManageOpc
 	localInfluxdb         IManageInfluxdb
+	localModbus           IManageModbus
 )
 
 func ManageArea() IManageArea {
@@ -179,4 +187,15 @@ func ManageInfluxdb() IManageInfluxdb {
 
 func RegisterManageInfluxdb(i IManageInfluxdb) {
 	localInfluxdb = i
+}
+
+func ManageModbus() IManageModbus {
+	if localModbus == nil {
+		panic("implement not found for interface localModbus, forgot register?")
+	}
+	return localModbus
+}
+
+func RegisterManageModbus(i IManageModbus) {
+	localModbus = i
 }

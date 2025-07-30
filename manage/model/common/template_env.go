@@ -45,6 +45,12 @@ func (v *Value) ToValue() interface{} {
 		return val
 	case map[string]interface{}:
 		return val
+	case []uint16:
+		if len(val) > 1 {
+			return val
+		} else {
+			return val[0]
+		}
 	case nil:
 		return nil
 	default:
@@ -62,6 +68,12 @@ func (v *Value) ToValueInfluxdb() string {
 		return fmt.Sprintf("\"%s\"", val) // 字符串需要用引号包起来
 	case bool:
 		return fmt.Sprintf("%t", val)
+	case []uint16:
+		if len(val) > 1 {
+			return fmt.Sprintf("\"%v\"", val) // fallback，防止 panic
+		} else {
+			return fmt.Sprintf("%di", val[0]) // InfluxDB整数需要加 i
+		}
 	default:
 		return fmt.Sprintf("\"%v\"", val) // fallback，防止 panic
 	}
@@ -102,9 +114,14 @@ func (v *Value) UnmarshalJSON(data []byte) error {
 }
 
 func (v *Value) ToValueExpr(template string) any {
+	if template == "" {
+		return v.ToValue()
+	}
+
 	pre := map[string]interface{}{
 		"value": v.ToValue(),
 	}
+
 	program, err := expr.Compile(template, expr.Env(pre))
 	if err != nil {
 		return v.Value
@@ -118,7 +135,7 @@ func (v *Value) ToValueExpr(template string) any {
 
 func (v *Value) ToValueExprInfluxdb(template string) string {
 	switch val := v.ToValueExpr(template).(type) {
-	case int, int64, int32:
+	case int, int64, int32, uint16:
 		return fmt.Sprintf("%di", val) // InfluxDB整数需要加 i
 	case float64, float32:
 		return fmt.Sprintf("%f", val)

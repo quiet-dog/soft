@@ -11,9 +11,14 @@ import { defineAsyncComponent, reactive, ref } from "vue"
 export async function getAsyncDeviceConfigComponent(deviceId: number) {
     const res = await device.read(deviceId)
     if (res.data?.server?.type === 'opc') {
-        console.log('加载OPC设备配置组件')
         return defineAsyncComponent(() => {
             return import("@/package/sensor/opc/index.vue")
+        })
+    }
+
+    if (res.data?.server?.type === 'modbus_tcp') {
+        return defineAsyncComponent(() => {
+            return import("@/package/sensor/modbus/index.vue")
         })
     }
 
@@ -64,7 +69,7 @@ export function useSensorHook() {
             title: '备注', dataIndex: 'remark', formType: 'textarea', width: 200, addDisplay: true, editDisplay: true
         },
         {
-            title:"数据列",dataIndex:"view",addDisplay: false, editDisplay: false,width:100
+            title: "数据列", dataIndex: "view", addDisplay: false, editDisplay: false, width: 100
         }
     ])
 
@@ -132,13 +137,16 @@ export function useSensorHook() {
     const templateVisable = ref(false)
     const templateInfo = ref({
         type: "",
-        extend: ""
+        extend: "",
     })
     const changeExtend = (extend: any) => {
         crudRef.value.getFormData().extend = JSON.stringify(extend)
         device.read(asyncDeviceId.value).then(res => {
             templateInfo.value.type = res.data?.server?.type!
-            templateInfo.value.extend = JSON.stringify(extend)
+            templateInfo.value.extend = JSON.stringify({
+                ...extend,
+                deviceId: asyncDeviceId.value
+            })
             templateVisable.value = true
         })
     }

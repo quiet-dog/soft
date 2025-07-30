@@ -110,3 +110,15 @@ type ReadSensorRes struct {
 	g.Meta `mime:"application/json"`
 	Data   *res.SensorInfo `json:"data" dc:"服务信息"`
 }
+
+type ReadEchartSensorReq struct {
+	g.Meta `path:"/sensor/readEchart" method:"post" tags:"传感器" summary:"获取传感器." x-permission:"system:readEchart:read"`
+	model.AuthorHeader
+	model.PageListReq
+	req.ManageInfluxdbOneSensorSearch
+}
+
+type ReadEchartSensorRes struct {
+	g.Meta `mime:"application/json"`
+	Data   *res.SensorEchart `json:"data" dc:"服务信息"`
+}

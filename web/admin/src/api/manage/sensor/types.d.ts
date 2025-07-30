@@ -59,3 +59,24 @@ export interface InfluxdbData extends BasePageReq {
     beginTime: string;
     endTime: string;
 }
+
+
+
+export interface ReadSensorEchart extends BasePageReq {
+    sensorId: number;
+    // deviceId: number;
+    beginTime: string | number;
+    endTime: string | number;
+}
+
+
+export interface SensorEchart {
+    sensorId: number;
+    deviceId: number;
+    sensorName: string;
+    sensorTypeName: string;
+    sensorTypeId: string;
+    xData: string[];
+    eSeiresData: number[];
+    cSeiresData: number[];
+}
