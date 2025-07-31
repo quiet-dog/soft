@@ -1,7 +1,12 @@
 <script lang='ts' setup>
 import { TreeLeaf } from '@/api/manage/base';
 import opc from '@/api/manage/opc';
-import { onMounted, reactive, ref } from 'vue';
+import { ref } from 'vue';
+import { ExtendType } from ".";
+
+const { sExtend } = defineProps<{
+    sExtend: ExtendType
+}>()
 
 const visible = defineModel({
     type: Boolean,
@@ -13,7 +18,7 @@ const extend = ref({
 })
 
 const emit = defineEmits<{
-    (e: 'changeExtend', value: { id: number }): void;
+    (e: 'changeExtend', value: ExtendType): void;
 }>();
 
 
@@ -40,24 +45,31 @@ const select = (selectedKeys, e) => {
     visible.value = false;
 }
 
-function onClose(){
+function onClose() {
     visible.value = false;
     emit("changeExtend", extend.value);
 }
 
-onMounted(() => {
+function handleOpen() {
     opc.treeLazy(serverId, 0).then(res => {
-        console.log("aaa",res.data);
+        console.log("aaa", res.data);
         treeData.value = res.data!;
     })
-})
+    if (sExtend != undefined && sExtend != null) {
+        extend.value = JSON.parse(JSON.stringify(sExtend))
+    } else {
+        extend.value.id = 0
+    }
+
+}
+
 
 </script>
 
 <template>
-    <AModal @close="onClose" v-model:visible="visible" title="OPC节点配置">
+    <AModal @open="handleOpen" @close="onClose" v-model:visible="visible" title="OPC节点配置">
         <a-tree :checked-strategy="'child'" @select="select" :data="treeData" :load-more="loadMore" :field-names="{
-            key:'value',
+            key: 'value',
             title: 'label',
             children: 'children'
         }" />

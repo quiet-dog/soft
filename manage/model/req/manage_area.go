@@ -16,6 +16,15 @@ type ManageAreaSave struct {
 	Sort     int    `json:"sort" description:"排序"`                              // 排序
 }
 
+type ManageAreaUpdateInfo struct {
+	ManageAreaSave
+	base.BaseId
+}
+
 type ManageAreaDelete struct {
 	base.BaseIds
+}
+
+type ManageAreaTreeById struct {
+	base.BaseId
 }

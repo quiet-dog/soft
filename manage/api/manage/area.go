@@ -63,3 +63,24 @@ type DeleteAreaReq struct {
 type DeleteAreaRes struct {
 	g.Meta `mime:"application/json" description:"删除区域结果"`
 }
+
+type UpdateAreaReq struct {
+	g.Meta `path:"/area/update/{Id}" method:"put" tags:"区域管理" summary:"更新区域信息." x-permission:"manage:area:update"`
+	model.AuthorHeader
+	req.ManageAreaUpdateInfo
+}
+
+type UpdateAreaRes struct {
+	g.Meta `mime:"application/json"`
+}
+
+type AllTreeByIdReq struct {
+	g.Meta `path:"/area/treeTop" method:"get" tags:"区域管理" summary:"更新区域信息." x-permission:"manage:area:treeTop"`
+	model.AuthorHeader
+	req.ManageAreaSearch
+}
+
+type AllTreeByIdRes struct {
+	g.Meta `mime:"application/json"`
+	Data   []*res.AreaTree `json:"data"  dc:"area tree list" `
+}

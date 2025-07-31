@@ -5,7 +5,7 @@ import { SensorTreeLeaf } from "@/api/manage/sensor/types"
 import sensorType from "@/api/manage/sensorType"
 import { SensorTypeTreeLeaf } from "@/api/manage/sensorType/types"
 import { BasicColumn, BasicCrud } from "@/components/ma-crud/types"
-import { defineAsyncComponent, reactive, ref } from "vue"
+import { computed, defineAsyncComponent, reactive, ref } from "vue"
 
 
 export async function getAsyncDeviceConfigComponent(deviceId: number) {
@@ -124,10 +124,12 @@ export function useSensorHook() {
 
     const asyncComponent = ref()
     const asyncDeviceId = ref(0)
+    const sExtend = ref()
     const changeDevice = async (value: number) => {
         asyncComponent.value = await getAsyncDeviceConfigComponent(value)
         asyncDeviceId.value = value
         crudRef.value.getFormData().deviceId = value
+        sExtend.value = crudRef.value.getFormData().extend
     }
 
     const visible = ref(false)
@@ -172,6 +174,7 @@ export function useSensorHook() {
         changeExtend,
         templateVisable,
         templateInfo,
-        changeTemplate
+        changeTemplate,
+        sExtend
     }
 }

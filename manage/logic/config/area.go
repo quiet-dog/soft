@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"database/sql"
 	"devinggo/manage/dao"
 	"devinggo/manage/model/do"
 	"devinggo/manage/model/req"
@@ -9,6 +10,7 @@ import (
 	"devinggo/manage/service/manage"
 	"devinggo/modules/system/logic/base"
 	"devinggo/modules/system/model"
+	"devinggo/modules/system/myerror"
 	"devinggo/modules/system/pkg/hook"
 	"devinggo/modules/system/pkg/orm"
 	"devinggo/modules/system/pkg/utils"
@@ -141,4 +143,89 @@ func (s *sArea) handleAreaSearch(ctx context.Context, in *req.ManageAreaSearch) 
 	query = query.Where(dao.ManageArea.Table()+".parent_id", in.ParentId)
 	// }
 	return
+}
+
+func (s *sArea) UpdateInfo(ctx context.Context, in *req.ManageAreaUpdateInfo) (out sql.Result, err error) {
+	if g.IsEmpty(in.Id) {
+		err = myerror.MissingParameter(ctx, "区域id为空")
+		return
+	}
+
+	var area *do.ManageArea
+	if err = gconv.Struct(in, &area); err != nil {
+		return
+	}
+
+	out, err = s.Model(ctx).OmitEmptyData().Data(area).Where(dao.ManageArea.Columns().Id, in.Id).Update()
+	if utils.IsError(err) {
+		return
+	}
+
+	return
+}
+
+func (s *sArea) AllTreeById(ctx context.Context, in *req.ManageAreaSearch) (items []*res.AreaTree, err error) {
+	sql := fmt.Sprintf(`WITH RECURSIVE ancestors AS (
+  SELECT id, name, parent_id, 0 as level,created_at
+  FROM manage_area
+  WHERE id = %d
+  UNION ALL
+  SELECT m.id, m.name, m.parent_id, a.level + 1,m.created_at
+  FROM manage_area m
+  JOIN ancestors a ON m.id = a.parent_id
+)
+SELECT * FROM ancestors`, in.ParentId)
+	var rows []*res.AreaTableRow
+	dao.ManageArea.DB().Raw(sql).Scan(&rows)
+	items = s.buildAreaTree(rows)
+
+	// query := s.handleAreaSearch(ctx, in)
+	// err = query.Fields(dao.ManageArea.Columns().Id, dao.ManageArea.Columns().Name, dao.ManageArea.Columns().ParentId).OrderAsc(dao.ManageArea.Columns().Sort).Scan(&rows)
+	// if utils.IsError(err) {
+	// 	return nil, err
+	// }
+	// for _, row := range rows {
+	// 	isHave, err := s.isHaveChild(ctx, row.Id)
+	// 	if utils.IsError(err) {
+	// 		return nil, err
+	// 	}
+	// 	items = append(items, &res.AreaTree{
+	// 		Label:  row.Name,
+	// 		Value:  row.Id,
+	// 		IsLeaf: isHave,
+	// 	})
+	// }
+	return
+}
+
+func (s *sArea) buildAreaTree(rows []*res.AreaTableRow) []*res.AreaTree {
+	// 建立一个 ID 到节点的映射
+	nodeMap := make(map[int64]*res.AreaTree)
+	var roots []*res.AreaTree
+
+	// 初始化所有节点
+	for _, row := range rows {
+		nodeMap[row.Id] = &res.AreaTree{
+			Label:  row.Name,
+			Value:  row.Id,
+			IsLeaf: true,
+		}
+	}
+
+	// 构造树结构
+	for _, row := range rows {
+		node := nodeMap[row.Id]
+		if row.ParentId != 0 {
+			parent, ok := nodeMap[*&row.ParentId]
+			if ok {
+				parent.Children = append(parent.Children, *node)
+				parent.IsLeaf = false
+			}
+		} else {
+			// 如果没有 parent_id，说明是根节点
+			roots = append(roots, node)
+		}
+	}
+
+	return roots
 }

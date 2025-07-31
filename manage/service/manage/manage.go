@@ -7,6 +7,7 @@ package manage
 
 import (
 	"context"
+	"database/sql"
 	"devinggo/manage/model/common"
 	"devinggo/manage/model/req"
 	"devinggo/manage/model/res"
@@ -22,6 +23,8 @@ type (
 		IsExitAreaById(ctx context.Context, id int64) (bool, error)
 		Tree(ctx context.Context, in *req.ManageAreaSearch) (rs []*res.AreaTree, err error)
 		Delete(ctx context.Context, ids []int64) (err error)
+		UpdateInfo(ctx context.Context, in *req.ManageAreaUpdateInfo) (out sql.Result, err error)
+		AllTreeById(ctx context.Context, in *req.ManageAreaSearch) (items []*res.AreaTree, err error)
 	}
 
 	IManageAlarmLabel interface {
@@ -37,6 +40,7 @@ type (
 		Types(ctx context.Context) (rs []*res.ServerType, err error)
 		Tree(ctx context.Context, req *model.PageListReq, in *req.ManageServerSearch) (rs []*res.AreaTree, err error)
 		Read(ctx context.Context, serverId int64) (DeviceInfo *res.ServerInfo, err error)
+		UpdateInfo(ctx context.Context, in *req.ManageServerUpdateInfo) (out sql.Result, err error)
 	}
 
 	IManageDevice interface {

@@ -85,3 +85,13 @@ type ReadServerRes struct {
 	g.Meta `mime:"application/json"`
 	Data   *res.ServerInfo `json:"data" dc:"服务信息"`
 }
+
+type UpdateServerReq struct {
+	g.Meta `path:"/server/update/{Id}" method:"put" tags:"服务管理" summary:"更新服务信息." x-permission:"manage:server:update"`
+	model.AuthorHeader
+	req.ManageServerUpdateInfo
+}
+
+type UpdateServerRes struct {
+	g.Meta `mime:"application/json"`
+}

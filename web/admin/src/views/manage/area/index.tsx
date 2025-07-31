@@ -102,6 +102,9 @@ export function useAreaHook() {
             show: true,
             api: area.deletes, auth: ['system:area:delete'],
         },
+        edit: {
+            show: true, api: area.update, auth: ['manage:area:update']
+        }
     })
 
     const selectAreaList = ref<AreaTree[]>([
@@ -119,6 +122,11 @@ export function useAreaHook() {
             title: '父级区域', dataIndex: 'parentId', hide: true, addDisplay: true, editDisplay: true, width: 150, formType: 'tree-select',
             dict: {
                 async data() {
+                    if (Number(crudRef.value.getFormData().parentId) > 0) {
+                        const res = await area.treeTop(Number(crudRef.value.getFormData().parentId))
+                        const list = res.data
+                        return list
+                    }
                     const list = await getTreeAreaChildren(0)
                     return list
                 }

@@ -13,3 +13,7 @@ type BaseTable struct {
 type BaseIds struct {
 	Ids []int64 `json:"ids" description:"主键集合"` // 主键集合
 }
+
+type BaseId struct {
+	Id int64 `json:"id"`
+}

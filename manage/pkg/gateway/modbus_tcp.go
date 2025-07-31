@@ -95,6 +95,14 @@ func (c *ModbusTcpClient) connectAndSubscribeOnce(channel chan Value) (err error
 	c.isOnline = true
 	//  durationToCron(c.conf.SubTime)
 	c.timer, err = g.Add(ctx, durationToCron(c.conf.SubTime), func(ctx context.Context) {
+		c.client.Close()
+		if err := c.client.Connect(); err != nil {
+
+			fmt.Println("===========================测试111")
+
+			c.isOnline = false
+			return
+		}
 		for _, device := range c.nodes {
 			for _, sensor := range device.Sensors {
 				client := modbus.NewClient(handler)

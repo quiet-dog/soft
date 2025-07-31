@@ -60,12 +60,24 @@ func (g *Gateway) UpdateClientConfig(serviceId int64, conf Config) error {
 	return nil
 }
 
+// 获取对应客户端
 func (g *Gateway) Client(serviceId int64) (*Client, bool) {
 	if client, ok := g.Devices.Load(serviceId); ok {
 		return client, true
 	}
 	log.Printf("[WARN] 设备 %d 的客户端不存在", serviceId)
 	return nil, false
+}
+
+func (g *Gateway) GetOnline(serviceId int64) bool {
+	if client, ok := g.Devices.Load(serviceId); ok {
+		if client != nil {
+			return client.IsOnline()
+		}
+		return false
+	}
+	log.Printf("[WARN] 设备 %d 的客户端不存在", serviceId)
+	return false
 }
 
 // 注册通道

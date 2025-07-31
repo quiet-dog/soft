@@ -3,9 +3,11 @@ import device from '@/api/manage/device';
 import opc from '@/api/manage/opc';
 import { OpcExtend } from '@/api/manage/sensor/types';
 import { reactive, defineProps, onMounted, ref } from 'vue';
+import { ExtendType } from '.';
 
-const { deviceId = 0 } = defineProps<{
-    deviceId: number
+const { deviceId = 0, sExtend } = defineProps<{
+    deviceId: number,
+    sExtend: ExtendType
 }>()
 
 const visible = defineModel({
@@ -18,7 +20,7 @@ const extend = ref({
 })
 
 const emit = defineEmits<{
-    (e: 'changeExtend', value: { id: number }): void;
+    (e: 'changeExtend', value: ExtendType): void;
 }>();
 
 const form = reactive({})
@@ -31,32 +33,42 @@ const handleCancel = () => {
     visible.value = false;
 }
 
-function onClose(){
+function onClose() {
     visible.value = false;
 }
 
 const selectOptions = ref()
 
-onMounted(()=>{
-    device.read(deviceId).then(res=>{
-        if(res.data?.extend){
+function handleOpen() {
+    if (sExtend != undefined && sExtend != null) {
+        extend.value = JSON.parse(JSON.stringify(sExtend))
+    } else {
+        extend.value.id = 0
+    }
+
+    device.read(deviceId).then(res => {
+        if (res.data?.extend) {
             let extend = res.data.extend as OpcExtend
-            opc.treeLazy(res.data.serverId,extend.id).then(r=>{
+            opc.treeLazy(res.data.serverId, extend.id).then(r => {
                 // console.log("rrrrrrrrrrr=",r)
                 selectOptions.value = r.data
             })
         }
     })
-})
+}
+
+
+
 </script>
 
 <template>
-    <AModal @close="onClose" v-model:visible="visible" title="OPC节点配置" @ok="handleOk" @cancel="handleCancel">
+    <AModal @open="handleOpen" @close="onClose" v-model:visible="visible" title="OPC节点配置" @ok="handleOk"
+        @cancel="handleCancel">
         <AForm :model="extend">
             <ARow>
                 <ACol>
                     <AFormItem label="监测点位">
-                        <ACascader v-model="extend.id" :options="selectOptions"  />
+                        <ACascader v-model="extend.id" :options="selectOptions" />
                     </AFormItem>
                 </ACol>
             </ARow>

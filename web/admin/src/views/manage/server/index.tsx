@@ -17,6 +17,7 @@ export default function useServerHook() {
             show: true,
             api: server.deletes, auth: ['system:server:delete'],
         },
+        edit: { show: true, api: server.update, auth: ['manage:server:update'] }
     })
     const columns = reactive([
         { title: 'ID', dataIndex: 'id', addDisplay: false, editDisplay: false, width: 50, hide: true },
@@ -55,6 +56,9 @@ export default function useServerHook() {
         {
             title: '密码', dataIndex: 'password', formType: 'input-password', width: 150, addDisplay: true, editDisplay: true, commonRules: [
             ]
+        },
+        {
+            title: '在线状态', dataIndex: 'isOnline', addDisplay: false, editDisplay: false
         },
         {
             title: '备注', dataIndex: 'remark', formType: 'textarea', width: 200, addDisplay: true, editDisplay: true

@@ -17,18 +17,34 @@ export default {
             data: params
         })
     },
-    deletes: (params: BaseIds) => {
+    deletes(params: BaseIds) {
         return http({
             url: '/manage/area/delete',
             method: 'delete',
             data: params
         })
     },
-    tree: (params: AreaSearch) => {
+    tree(params: AreaSearch) {
         return http<AreaTree[]>({
             url: '/manage/area/tree',
             method: 'get',
             params
         })
     },
+    update(id: number, data: AreaEdit) {
+        return http({
+            url: '/manage/area/update/' + id,
+            method: 'put',
+            data: data
+        })
+    },
+    treeTop(id: number) {
+        return http({
+            url: "/manage/area/treeTop",
+            method: 'get',
+            params: {
+                parentId: id
+            }
+        })
+    }
 }

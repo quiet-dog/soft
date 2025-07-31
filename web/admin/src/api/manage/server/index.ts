@@ -36,5 +36,12 @@ export default {
             url: '/manage/server/read/' + id,
             method: 'get',
         });
+    },
+    update(id: number, data: ServerEdit) {
+        return http({
+            url: "/manage/server/update/" + id,
+            method: 'put',
+            data
+        })
     }
 }

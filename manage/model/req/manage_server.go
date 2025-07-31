@@ -1,5 +1,7 @@
 package req
 
+import "devinggo/manage/model/base"
+
 type ManageServerSearch struct {
 	Name string `json:"name" description:"服务器名称"` // 服务器名称
 	Ip   string `json:"ip" description:"服务器IP"`   // 服务器IP
@@ -15,4 +17,9 @@ type ManageServerSave struct {
 	Password string `json:"password" description:"服务器密码"`                         // 服务器密码
 	Interval int64  `json:"interval" description:"采集间隔"`                          // 采集间隔
 	Remark   string `json:"remark" description:"备注"`                              // 备注
+}
+
+type ManageServerUpdateInfo struct {
+	ManageServerSave
+	base.BaseId
 }

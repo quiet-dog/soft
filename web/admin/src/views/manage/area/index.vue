@@ -1,8 +1,8 @@
 <script lang='ts' setup>
-import {useAreaHook} from '.';
+import { useAreaHook } from '.';
 
 
-const { areaList, loadAreaTree, selectArea, curd, columns,crudRef } = useAreaHook()
+const { areaList, loadAreaTree, selectArea, curd, columns, crudRef } = useAreaHook()
 
 </script>
 

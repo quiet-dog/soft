@@ -27,6 +27,7 @@ type OpcClient struct {
 	sub      *monitor.Subscription
 	nodes    OpcNodes
 	ctx      context.Context
+	cancel   context.CancelFunc
 	channel  chan Value
 }
 
@@ -77,6 +78,8 @@ func (c *OpcClient) connectAndSubscribeOnce(channel chan Value) (err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	c.ctx = ctx
+	c.cancel = cancel
+
 	endpoints, err := opcua.GetEndpoints(ctx, fmt.Sprintf("opc.tcp://%s:%s", c.conf.Host, c.conf.Port))
 	if err != nil {
 		return
@@ -117,6 +120,7 @@ func (c *OpcClient) connectAndSubscribeOnce(channel chan Value) (err error) {
 	wg := &sync.WaitGroup{}
 
 	c.isOnline = true
+
 	// // start callback-based subscription
 	// wg.Add(1)
 	// go startCallbackSub(ctx, m, 2*time.Second, 0, wg, "ns=3;i=3")
@@ -125,7 +129,6 @@ func (c *OpcClient) connectAndSubscribeOnce(channel chan Value) (err error) {
 	wg.Add(1)
 	go c.startChanSub(ctx, m, c.conf.SubTime, 0, wg)
 
-	<-ctx.Done()
 	wg.Wait()
 	c.isOnline = false
 	return
@@ -164,12 +167,20 @@ func (c *OpcClient) startChanSub(ctx context.Context, m *monitor.NodeMonitor, in
 	}
 	c.sub = sub
 	defer cleanup(ctx, sub, wg)
-
 	for {
 		select {
 		case <-ctx.Done():
 			return
+		case <-time.After(5 * time.Second):
+			fmt.Println("====================进入5s后")
+			if err = c.TestPing(); err != nil {
+				c.isOnline = false
+				c.client.Close(ctx)
+				c.cancel()
+				return
+			}
 		case msg := <-ch:
+			fmt.Println("===============================来自通道信息")
 			if msg.Error != nil {
 				log.Printf("[channel ] sub=%d error=%s", sub.SubscriptionID(), msg.Error)
 			} else {
@@ -200,9 +211,7 @@ func (c *OpcClient) startChanSub(ctx context.Context, m *monitor.NodeMonitor, in
 				// log.Printf("[channel ] sub=%d ts=%s node=%s value=%v", sub.SubscriptionID(), msg.SourceTimestamp.UTC().Format(time.RFC3339), msg.NodeID, msg.Value.Value())
 			}
 			time.Sleep(lag)
-		default:
-			// log.Println("[WARN] Channel is full, dropping message")
-			continue
+
 		}
 	}
 }
@@ -216,6 +225,9 @@ func cleanup(ctx context.Context, sub *monitor.Subscription, wg *sync.WaitGroup)
 func (c *OpcClient) AddNodes(nodes ...OpcNode) {
 	for _, v := range nodes {
 		if !slices.Contains(c.nodes, v) {
+			if c.sub == nil {
+				return
+			}
 			c.sub.AddNodes(c.ctx, v.NodeId)
 			c.nodes = append(c.nodes, v)
 		}

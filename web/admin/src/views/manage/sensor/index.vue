@@ -9,7 +9,7 @@ const { crud, columns,
     sensorTypeOptions, deviceOptions,
     loadDeviceOptions, changeDevice, asyncComponent,
     visible, asyncDeviceId, changeExtend, templateVisable,
-    templateInfo, changeTemplate
+    templateInfo, changeTemplate,sExtend
 } = useSensorHook()
 
 const sensorDataVisible = ref(false)
@@ -33,8 +33,8 @@ function changeSensorData(id: number) {
             </template>
 
             <template #form-deviceId>
-                <a-select @change="changeDevice" @dropdown-reach-bottom="loadDeviceOptions" placeholder="请选择设备">
-                    <a-option v-for="item in deviceOptions.items" :key="item.value" :value="item.value">
+                <a-select  @dropdown-reach-bottom="loadDeviceOptions" placeholder="请选择设备">
+                    <a-option @click="changeDevice(item.value)" v-for="item in deviceOptions.items" :key="item.value" :value="item.value">
                         {{ item.label }}
                     </a-option>
                 </a-select>
@@ -44,7 +44,7 @@ function changeSensorData(id: number) {
                 <AButton type="primary" @click="changeSensorData(record.id)">查看</AButton>
             </template>
         </ma-crud>
-        <component :is="asyncComponent" :deviceId="asyncDeviceId" @changeExtend="changeExtend" />
+        <component :is="asyncComponent" :deviceId="asyncDeviceId" @changeExtend="changeExtend" :sExtend="sExtend" />
         <Template v-model:model-value="templateVisable" :templateInfo="templateInfo"
             @change-template="changeTemplate" />
         <InSensor v-model:model-value="sensorDataVisible" :sensor-id="sensorDataId" />

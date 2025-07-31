@@ -19,7 +19,6 @@ type HookHand interface {
 type HookSelect interface {
 	SelectHook(ctx context.Context, in *gdb.HookSelectInput) (gdb.Result, error)
 }
-
 type HookInsert interface {
 	InsertHook(ctx context.Context, in *gdb.HookInsertInput) (sql.Result, error)
 }
@@ -27,13 +26,54 @@ type HookInsert interface {
 type HookUpdate interface {
 	UpdateHook(ctx context.Context, in *gdb.HookUpdateInput) (sql.Result, error)
 }
-
 type HookDelete interface {
 	DeleteHook(ctx context.Context, in *gdb.HookDeleteInput) (sql.Result, error)
 }
-
 type Hook struct {
 	Inner interface{}
+}
+
+type AfterSelectInterface interface {
+	AfterSelectHook(ctx context.Context, in *gdb.HookSelectInput, result *gdb.Result) (err error)
+}
+type BeforeSelectInterface interface {
+	BeforeSelectHook(ctx context.Context, in *gdb.HookSelectInput) (err error)
+}
+
+type AfterInsertInterface interface {
+	AfterInsertHook(ctx context.Context, in *gdb.HookInsertInput, result *sql.Result) (err error)
+}
+type BeforeInsertInterface interface {
+	BeforeInsertHook(ctx context.Context, in *gdb.HookInsertInput) (err error)
+}
+type BeforeUpdateInterface interface {
+	BeforeUpdateHook(ctx context.Context, in *gdb.HookUpdateInput) (err error)
+}
+
+type AfterUpdateInterface interface {
+	AfterUpdateHook(ctx context.Context, in *gdb.HookUpdateInput, result *sql.Result) (err error)
+}
+
+type AfterDeleteInterface interface {
+	AfterDeleteHook(ctx context.Context, in *gdb.HookDeleteInput, result *sql.Result) (err error)
+}
+
+type BeforeDeleteInterface interface {
+	BeforeDeleteHook(ctx context.Context, in *gdb.HookDeleteInput) (err error)
+}
+
+type OrmHook interface {
+	AfterSelectInterface
+	BeforeSelectInterface
+
+	AfterUpdateInterface
+	BeforeUpdateInterface
+
+	AfterInsertInterface
+	BeforeInsertInterface
+
+	AfterDeleteInterface
+	BeforeDeleteInterface
 }
 
 func (h *Hook) Bind() gdb.HookHandler {
@@ -47,22 +87,48 @@ func (h *Hook) Bind() gdb.HookHandler {
 	}
 	return gdb.HookHandler{
 		Select: func(ctx context.Context, in *gdb.HookSelectInput) (result gdb.Result, err error) {
+
+			if v, ok := h.Inner.(BeforeSelectInterface); ok {
+				err = v.BeforeSelectHook(ctx, in)
+				if err != nil {
+					return
+				}
+			}
+
 			result, err = in.Next(ctx)
 			if err != nil {
 				return result, err
 			}
-			if h.Inner != nil {
-				result, err = h.Inner.(HookSelect).SelectHook(ctx, in)
+
+			if v, ok := h.Inner.(AfterSelectInterface); ok {
+				err = v.AfterSelectHook(ctx, in, &result)
 				if err != nil {
-					return result, err
+					return
 				}
 			}
+
+			// for _, v := range h.Inner {
+			// 	if inn, ok := v.(HookSelect); ok {
+			// 		result, err = inn.SelectHook(ctx, in)
+			// 		if err != nil {
+			// 			return result, err
+			// 		}
+			// 	}
+			// }
+
 			if *options.UserRelate {
 				return hook.UserRelate(ctx, result, options.Params.([]string))
 			}
 			return
 		},
 		Insert: func(ctx context.Context, in *gdb.HookInsertInput) (result sql.Result, err error) {
+			if v, ok := h.Inner.(BeforeInsertInterface); ok {
+				err = v.BeforeInsertHook(ctx, in)
+				if err != nil {
+					return
+				}
+			}
+
 			if *options.AutoCreatedUpdatedBy {
 				err = hook.AutoCreatedUpdatedByInsert(ctx, in)
 				if err != nil {
@@ -78,11 +144,28 @@ func (h *Hook) Bind() gdb.HookHandler {
 			}
 			//g.Log().Debug(ctx, "in:", in)
 			result, err = in.Next(ctx)
+			if err != nil {
+				return
+			}
+
+			if v, ok := h.Inner.(AfterInsertInterface); ok {
+				err = v.AfterInsertHook(ctx, in, &result)
+				if err != nil {
+					return
+				}
+			}
 			g.Log().Debug(ctx, "Insert:", err)
 			return
 		},
-
 		Update: func(ctx context.Context, in *gdb.HookUpdateInput) (result sql.Result, err error) {
+
+			if v, ok := h.Inner.(BeforeUpdateInterface); ok {
+				err = v.BeforeUpdateHook(ctx, in)
+				if err != nil {
+					return
+				}
+			}
+
 			if *options.AutoCreatedUpdatedBy {
 				err = hook.AutoCreatedUpdatedByUpdatefunc(ctx, in)
 				if err != nil {
@@ -98,11 +181,26 @@ func (h *Hook) Bind() gdb.HookHandler {
 			}
 
 			result, err = in.Next(ctx)
+			if err != nil {
+				return
+			}
+
+			if v, ok := h.Inner.(AfterUpdateInterface); ok {
+				err = v.AfterUpdateHook(ctx, in, &result)
+				if err != nil {
+					return
+				}
+			}
 			return
 		},
-
 		Delete: func(ctx context.Context, in *gdb.HookDeleteInput) (result sql.Result, err error) {
 
+			if v, ok := h.Inner.(BeforeDeleteInterface); ok {
+				err = v.BeforeDeleteHook(ctx, in)
+				if err != nil {
+					return
+				}
+			}
 			if *options.CacheEvict {
 				err = hook.CleanCache[gdb.HookDeleteInput](ctx, in)
 				if err != nil {
@@ -111,6 +209,16 @@ func (h *Hook) Bind() gdb.HookHandler {
 			}
 
 			result, err = in.Next(ctx)
+
+			if err != nil {
+				return
+			}
+			if v, ok := h.Inner.(AfterDeleteInterface); ok {
+				err = v.AfterDeleteHook(ctx, in, &result)
+				if err != nil {
+					return
+				}
+			}
 			return
 		},
 	}
@@ -121,5 +229,6 @@ func Bind(Inner ...interface{}) gdb.HookHandler {
 	if len(Inner) > 0 {
 		h.Inner = Inner[0]
 	}
+
 	return h.Bind()
 }

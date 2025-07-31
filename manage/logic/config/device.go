@@ -39,14 +39,16 @@ func NewManageDevice() *sDevice {
 type deviceHook struct {
 }
 
-func (h *deviceHook) SelectHook(ctx context.Context, in *gdb.HookSelectInput) (result gdb.Result, err error) {
-	result, err = in.Next(ctx)
-	for _, item := range result {
+func (h *deviceHook) AfterSelectHook(ctx context.Context, in *gdb.HookSelectInput, result *gdb.Result) (err error) {
+	for _, item := range *result {
 		if !item["area_id"].IsEmpty() {
 			item["area_name"], _ = dao.ManageArea.Ctx(ctx).WherePri(item["area_id"]).Value("name")
 		}
+		if !item["server_id"].IsEmpty() {
+			item["server_name"], _ = dao.ManageServer.Ctx(ctx).WherePri(item["server_id"]).Value("name")
+		}
 	}
-	return result, err
+	return
 }
 
 func (s *sDevice) Model(ctx context.Context) *gdb.Model {

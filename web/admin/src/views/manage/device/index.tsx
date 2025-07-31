@@ -6,7 +6,6 @@ import { TreeLeaf } from "@/api/manage/base"
 import server from "@/api/manage/server"
 import { ServerTreeLeaf } from "@/api/manage/server/types"
 
-
 export async function getAsyncServerConfigComponent(serverId: number) {
     const res = await server.read(serverId)
     if (res.data?.type === 'opc') {
@@ -20,7 +19,6 @@ export async function getAsyncServerConfigComponent(serverId: number) {
             return import("@/package/device/modbus/index.vue")
         })
     }
-
 }
 
 export function useDeviceHook() {
@@ -138,11 +136,13 @@ export function useDeviceHook() {
 
     const asyncComponent = ref()
     const asyncServerId = ref(0)
+    const sExtend = ref()
     const changeServer = async (value: number) => {
         console.log('changeServer', value)
         asyncComponent.value = await getAsyncServerConfigComponent(value)
         asyncServerId.value = value
         crudRef.value.getFormData().serverId = value
+        sExtend.value = crudRef.value.getFormData().extend
     }
 
     const loadServerOptions = () => {
@@ -172,6 +172,7 @@ export function useDeviceHook() {
         changeServer,
         asyncComponent,
         asyncServerId,
-        changeExtend
+        changeExtend,
+        sExtend
     }
 }

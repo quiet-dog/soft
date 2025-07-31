@@ -2,17 +2,22 @@ package config
 
 import (
 	"context"
+	"database/sql"
 	"devinggo/manage/dao"
+	"devinggo/manage/global"
 	"devinggo/manage/model/do"
 	"devinggo/manage/model/req"
 	"devinggo/manage/model/res"
 	"devinggo/manage/pkg/gateway"
+	"devinggo/manage/pkg/hook"
 	"devinggo/manage/service/manage"
 	"devinggo/modules/system/logic/base"
 	"devinggo/modules/system/model"
-	"devinggo/modules/system/pkg/hook"
+	"devinggo/modules/system/myerror"
 	"devinggo/modules/system/pkg/orm"
 	"devinggo/modules/system/pkg/utils"
+	"errors"
+	"time"
 
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/frame/g"
@@ -31,8 +36,75 @@ func NewManageServer() *sServer {
 	return &sServer{}
 }
 
+type serverHook struct{}
+
+// 创建前
+func (s *serverHook) BeforeInsertHook(ctx context.Context, in *gdb.HookInsertInput) (err error) {
+	for _, m := range in.Data {
+		// 是否存在相同的ip和端口
+		if !g.IsEmpty(m[dao.ManageServer.Columns().Ip]) && !g.IsEmpty(m[dao.ManageServer.Columns().Port]) {
+			var result gdb.Record
+			result, err = dao.ManageServer.Ctx(ctx).
+				Where(dao.ManageServer.Columns().Ip, m[dao.ManageServer.Columns().Ip]).
+				Where(dao.ManageServer.Columns().Port, m[dao.ManageServer.Columns().Port]).
+				One()
+			if err != nil {
+				return
+			}
+			if !result.IsEmpty() {
+				return errors.New("服务器已经存在")
+			}
+		}
+	}
+
+	return
+}
+
+// 创建后
+func (s *serverHook) AfterInsertHook(ctx context.Context, in *gdb.HookInsertInput, result *sql.Result) (err error) {
+
+	return
+}
+
+// 更新前
+func (s *serverHook) BeforeUpdateHook(ctx context.Context, in *gdb.HookUpdateInput) (err error) {
+
+	switch m := in.Data.(type) {
+	case map[string]interface{}:
+		// 是否存在相同的ip和端口
+		if !g.IsEmpty(m["ip"]) && !g.IsEmpty(m["port"]) {
+			var result gdb.Record
+			result, err = dao.ManageServer.Ctx(ctx).
+				WhereNot(dao.ManageServer.Columns().Id, m[dao.ManageServer.Columns().Id]).
+				Where(dao.ManageServer.Columns().Ip, m[dao.ManageServer.Columns().Ip]).
+				Where(dao.ManageServer.Columns().Port, m[dao.ManageServer.Columns().Port]).
+				One()
+			if err != nil {
+				return
+			}
+			if !result.IsEmpty() {
+				return errors.New("服务器已经存在")
+			}
+		}
+	}
+
+	return
+}
+
+// 查询后
+func (s *serverHook) AfterSelectHook(ctx context.Context, in *gdb.HookSelectInput, result *gdb.Result) (err error) {
+	for _, item := range *result {
+		if !item[dao.ManageServer.Columns().Id].IsEmpty() {
+			item["is_online"] = g.NewVar(global.DeviceGateway.GetOnline(item[dao.ManageServer.Columns().Id].Int64()))
+		}
+
+	}
+	return
+}
+
 func (s *sServer) Model(ctx context.Context) *gdb.Model {
-	return dao.ManageServer.Ctx(ctx).Hook(hook.Bind()).Cache(orm.SetCacheOption(ctx)).OnConflict("id")
+	h := &serverHook{}
+	return dao.ManageServer.Ctx(ctx).Hook(hook.Bind(h)).Cache(orm.SetCacheOption(ctx)).OnConflict("id")
 }
 
 func (s *sServer) GetPageListForSearch(ctx context.Context, req *model.PageListReq, in *req.ManageServerSearch) (res []*res.ServerTableRow, total int, err error) {
@@ -44,6 +116,7 @@ func (s *sServer) GetPageListForSearch(ctx context.Context, req *model.PageListR
 	return
 }
 
+// 创建服务
 func (s *sServer) Save(ctx context.Context, in *req.ManageServerSave) (id int64, err error) {
 	var area *do.ManageServer
 	if err = gconv.Struct(in, &area); err != nil {
@@ -54,7 +127,23 @@ func (s *sServer) Save(ctx context.Context, in *req.ManageServerSave) (id int64,
 	if utils.IsError(err) {
 		return 0, err
 	}
+
 	id, err = rs.LastInsertId()
+	if err != nil {
+		return
+	}
+
+	// 测试是否连通
+	_, err = global.DeviceGateway.AddClient(id, gateway.Config{
+		Type:    in.Type,
+		Port:    in.Port,
+		Host:    in.Ip,
+		SubTime: time.Duration(in.Interval * int64(time.Second)),
+	})
+
+	if err != nil {
+		s.Delete(ctx, []int64{id})
+	}
 	return
 }
 
@@ -100,6 +189,33 @@ func (s *sServer) Read(ctx context.Context, serverId int64) (serverInfo *res.Ser
 	if utils.IsError(err) {
 		return
 	}
+	return
+}
+
+func (s *sServer) UpdateInfo(ctx context.Context, in *req.ManageServerUpdateInfo) (out sql.Result, err error) {
+	if g.IsEmpty(in.Id) {
+		err = myerror.MissingParameter(ctx, "服务id为空")
+		return
+	}
+
+	var server *do.ManageServer
+	if err = gconv.Struct(in, &server); err != nil {
+		return
+	}
+
+	out, err = s.Model(ctx).OmitEmptyData().Data(server).Where(dao.ManageServer.Columns().Id, in.Id).Update()
+	if utils.IsError(err) {
+		return
+	}
+
+	global.DeviceGateway.DeleteClient(in.Id)
+	global.DeviceGateway.AddClient(in.Id, gateway.Config{
+		Type:    in.Type,
+		Host:    in.Ip,
+		Port:    in.Port,
+		SubTime: time.Duration(in.Interval * int64(time.Second)),
+	})
+
 	return
 }
 

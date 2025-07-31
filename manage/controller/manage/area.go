@@ -61,3 +61,15 @@ func (c *areaController) Tree(ctx context.Context, in *manage.AreaTreeReq) (out 
 	out.Data = items
 	return
 }
+
+func (c *areaController) UpdateInfo(ctx context.Context, in *manage.UpdateAreaReq) (out *manage.UpdateAreaRes, err error) {
+	out = &manage.UpdateAreaRes{}
+	_, err = sManage.ManageArea().UpdateInfo(ctx, &in.ManageAreaUpdateInfo)
+	return
+}
+
+func (c *areaController) AllTreeById(ctx context.Context, in *manage.AllTreeByIdReq) (out *manage.AllTreeByIdRes, err error) {
+	out = &manage.AllTreeByIdRes{}
+	out.Data, err = sManage.ManageArea().AllTreeById(ctx, &in.ManageAreaSearch)
+	return
+}

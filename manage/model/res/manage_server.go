@@ -12,6 +12,7 @@ type ServerTableRow struct {
 	Password string `json:"password" description:"密码"`   // 密码
 	Interval int64  `json:"interval" description:"采集间隔"` // 采集间隔
 	Remark   string `json:"remark" description:"备注"`     // 备注
+	IsOnline bool   `json:"isOnline" description:"在线状态"` // 在线状态
 }
 
 type ServerType struct {

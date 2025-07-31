@@ -2,7 +2,7 @@
 import device from '@/api/manage/device';
 import { ref } from 'vue';
 import { Message } from '@arco-design/web-vue';
-
+import { ExtendType } from '.';
 
 
 const visible = defineModel({
@@ -10,8 +10,9 @@ const visible = defineModel({
     default: true,
 })
 
-const { serverId = 0 } = defineProps<{
-    serverId: number
+const { serverId = 0,sExtend } = defineProps<{
+    serverId: number,
+    sExtend:ExtendType
 }>()
 
 const extend = ref({
@@ -26,7 +27,7 @@ function changeSlave(val) {
 }
 
 const emit = defineEmits<{
-    (e: 'changeExtend', value: { slave: string, duration: number }): void;
+    (e: 'changeExtend', value: ExtendType): void;
 }>();
 
 
@@ -50,10 +51,20 @@ function testConnect() {
         testBtnLoading.value = false
     })
 }
+
+
+function handleOpen(){
+    if(sExtend != undefined && sExtend !=null){
+        extend.value = JSON.parse(JSON.stringify(sExtend))
+    } else {
+        extend.value.duration = 5
+        extend.value.slave = ""
+    }
+}
 </script>
 
 <template>
-    <AModal @close="onClose" v-model:visible="visible" title="modbus设备配置">
+    <AModal @open="handleOpen" @close="onClose" v-model:visible="visible" title="modbus设备配置">
         <AForm :model="extend">
             <AFormItem label="从站地址">
                 <AInput @change="changeSlave" placeholder="请输入十六进制地址">

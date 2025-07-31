@@ -22,9 +22,9 @@ func NewClinet(cfg Config) (client Client, err error) {
 			conf: cfg,
 		}
 		client.client = &opcClient
-		if err = opcClient.TestPing(); err != nil {
-			return
-		}
+		// if err = opcClient.TestPing(); err != nil {
+		// 	return
+		// }
 		go client.StoreOpcServer()
 	}
 
@@ -33,9 +33,9 @@ func NewClinet(cfg Config) (client Client, err error) {
 			conf: cfg,
 		}
 		client.client = &tcpClient
-		if tcpClient.TestPing(); err != nil {
-			return
-		}
+		// if tcpClient.TestPing(); err != nil {
+		// 	return
+		// }
 		go client.StoreModebusTcpServer()
 	}
 
@@ -52,7 +52,7 @@ func (c *Client) StoreOpcServer() {
 			log.Printf("[ERROR] %v", err)
 		}
 
-		log.Println("[WARN] 连接中断，5 秒后重试...")
+		log.Println("[WARN] opc 连接中断，5 秒后重试...")
 		time.Sleep(5 * time.Second)
 	}
 }
@@ -64,7 +64,7 @@ func (c *Client) StoreModebusTcpServer() {
 			log.Printf("[ERROR] %v", err)
 		}
 
-		log.Println("[WARN] 连接中断，5 秒后重试...")
+		log.Println("[WARN] modbus 连接中断，5 秒后重试...")
 		time.Sleep(5 * time.Second)
 	}
 }

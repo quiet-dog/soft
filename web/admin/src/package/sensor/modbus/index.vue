@@ -1,21 +1,23 @@
 <script lang='ts' setup>
 import { ref } from 'vue';
-
-
+import { ExtendType } from "."
 
 const visible = defineModel({
     type: Boolean,
     default: true,
 })
 
+const { sExtend } = defineProps<{
+    sExtend: ExtendType
+}>()
 
 const emit = defineEmits<{
-    (e: 'changeExtend', value: { start: string;quantity:number }): void;
+    (e: 'changeExtend', value: ExtendType): void;
 }>();
 
 const extend = ref({
     start: "",
-    quantity:0
+    quantity: 0
 })
 
 
@@ -23,32 +25,43 @@ const handleOk = () => {
     emit("changeExtend", extend.value);
     visible.value = false;
 }
+
 const handleCancel = () => {
     visible.value = false;
 }
 
-function onClose(){
+function onClose() {
     visible.value = false;
 }
-
 
 function changeSlave(val) {
     extend.value.start = "0x" + val
 }
 
+function handleOpen() {
+    if (sExtend != undefined && sExtend != null) {
+        extend.value = JSON.parse(JSON.stringify(sExtend))
+    } else {
+        extend.value.quantity = 0
+        extend.value.start = ""
+    }
+
+}
+
 </script>
 
 <template>
-   <AModal @close="onClose" v-model:visible="visible" title="modbus节点配置" @ok="handleOk" @cancel="handleCancel">
+    <AModal @open="handleOpen" @close="onClose" v-model:visible="visible" title="modbus节点配置" @ok="handleOk"
+        @cancel="handleCancel">
         <AForm :model="extend">
             <ARow>
                 <ACol>
                     <AFormItem label="起始地址">
                         <AInput @change="changeSlave" placeholder="请输入十六进制地址">
-                    <template #prepend>
-                        0x
-                    </template>
-                </AInput>
+                            <template #prepend>
+                                0x
+                            </template>
+                        </AInput>
                     </AFormItem>
                 </ACol>
             </ARow>
@@ -64,6 +77,4 @@ function changeSlave(val) {
     </AModal>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>
