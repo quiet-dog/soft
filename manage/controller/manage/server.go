@@ -74,7 +74,7 @@ func (c *serverController) Read(ctx context.Context, in *manage.ReadServerReq) (
 	return
 }
 
-func (c *sensorController) UpdateInfo(ctx context.Context, in *manage.UpdateServerReq) (out *manage.UpdateServerRes, err error) {
+func (c *serverController) UpdateInfo(ctx context.Context, in *manage.UpdateServerReq) (out *manage.UpdateServerRes, err error) {
 	out = &manage.UpdateServerRes{}
 	_, err = sManage.ManageServer().UpdateInfo(ctx, &in.ManageServerUpdateInfo)
 	return

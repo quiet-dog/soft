@@ -9,10 +9,11 @@ package cache
 import (
 	"bufio"
 	"context"
+	"strings"
+
 	"github.com/gogf/gf/v2/database/gredis"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gcache"
-	"strings"
 )
 
 // cache 缓存驱动

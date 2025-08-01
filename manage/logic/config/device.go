@@ -42,10 +42,18 @@ type deviceHook struct {
 func (h *deviceHook) AfterSelectHook(ctx context.Context, in *gdb.HookSelectInput, result *gdb.Result) (err error) {
 	for _, item := range *result {
 		if !item["area_id"].IsEmpty() {
-			item["area_name"], _ = dao.ManageArea.Ctx(ctx).WherePri(item["area_id"]).Value("name")
+			item["area_name"], _ = dao.ManageArea.Ctx(ctx).WherePri(item["area_id"].Int64()).Value("name")
 		}
 		if !item["server_id"].IsEmpty() {
-			item["server_name"], _ = dao.ManageServer.Ctx(ctx).WherePri(item["server_id"]).Value("name")
+			item["server_name"], _ = dao.ManageServer.Ctx(ctx).WherePri(item["server_id"].Int64()).Value("name")
+		}
+		if !item[dao.ManageDevice.Columns().Id].IsEmpty() {
+			data, _ := manage.ManageSensorCache().GetDevice(ctx, item[dao.ManageDevice.Columns().Id].Int64())
+			if len(data) > 0 {
+				item["is_online"] = g.NewVar(true)
+			} else {
+				item["is_online"] = g.NewVar(false)
+			}
 		}
 	}
 	return

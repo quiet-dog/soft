@@ -14,6 +14,10 @@ import (
 	"devinggo/manage/model/res/device"
 	"devinggo/manage/pkg/gateway"
 	"devinggo/modules/system/model"
+
+	"github.com/gogf/gf/v2/container/gvar"
+	"github.com/gogf/gf/v2/database/gdb"
+	"github.com/gogf/gf/v2/database/gredis"
 )
 
 type (
@@ -91,18 +95,39 @@ type (
 	IManageModbus interface {
 		TestDataByDeviceId(ctx context.Context, deviceId int64, in *req.ManageSensorReadData) (rs *common.TemplateEnv, err error)
 	}
+
+	IManageSensorCache interface {
+		Model(ctx context.Context) *gredis.Redis
+		Store(ctx context.Context, key int64, value common.TemplateEnv) (v *gvar.Var, err error)
+		Get(ctx context.Context, key int64) (t common.TemplateEnv, err error)
+		Delete(ctx context.Context, key int64) (n int64, err error)
+		StoreDevice(ctx context.Context, sensorId int64) (v *gvar.Var, err error)
+		GetDevice(ctx context.Context, deviceId int64) (data []int64, err error)
+		DeleteDevice(ctx context.Context, sensorId int64) (v *gvar.Var, err error)
+	}
+
+	IManageThreshold interface {
+		Model(ctx context.Context) *gdb.Model
+		Save(ctx context.Context, in *req.ThresholdRow) (id int64, err error)
+		Delete(ctx context.Context, in *req.ThresholdRow) (err error)
+		CleanDiff(ctx context.Context, in *req.ThresholdRow) (err error)
+		AddThreshold(ctx context.Context, in *req.ManageThresholdAddReq) (err error)
+		GetSensorThresholds(ctx context.Context, sensorId int64) (out []*req.ThresholdRow, err error)
+	}
 )
 
 var (
-	localManageArea       IManageArea
-	localManageAlarm      IManageAlarmLabel
-	localManageServer     IManageServer
-	localManageDevice     IManageDevice
-	localManageSensorType IManageSensorType
-	localManageSensor     IManageSensor
-	localManageOpc        IManageOpc
-	localInfluxdb         IManageInfluxdb
-	localModbus           IManageModbus
+	localManageArea        IManageArea
+	localManageAlarm       IManageAlarmLabel
+	localManageServer      IManageServer
+	localManageDevice      IManageDevice
+	localManageSensorType  IManageSensorType
+	localManageSensor      IManageSensor
+	localManageOpc         IManageOpc
+	localInfluxdb          IManageInfluxdb
+	localModbus            IManageModbus
+	localManageSensorCache IManageSensorCache
+	localManageThreshold   IManageThreshold
 )
 
 func ManageArea() IManageArea {
@@ -202,4 +227,26 @@ func ManageModbus() IManageModbus {
 
 func RegisterManageModbus(i IManageModbus) {
 	localModbus = i
+}
+
+func ManageSensorCache() IManageSensorCache {
+	if localManageSensorCache == nil {
+		panic("implement not found for interface localManageSensorCache, forgot register?")
+	}
+	return localManageSensorCache
+}
+
+func RegisterManageSensorCache(i IManageSensorCache) {
+	localManageSensorCache = i
+}
+
+func ManageThreshold() IManageThreshold {
+	if localManageThreshold == nil {
+		panic("implement not found for interface localManageThreshold, forgot register?")
+	}
+	return localManageThreshold
+}
+
+func RegisterManageThreshold(i IManageThreshold) {
+	localManageThreshold = i
 }

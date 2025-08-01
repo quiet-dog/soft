@@ -28,6 +28,7 @@ type Value struct {
 	Value      interface{} `json:"value"`
 	CreateTime time.Time   `json:"createTime"`
 	Type       string      `json:"type"`
+	DeviceId   int64       `json:"deviceId"`
 }
 
 func (v *OpcNodes) FindByNodeId(nodeId string) *OpcNode {

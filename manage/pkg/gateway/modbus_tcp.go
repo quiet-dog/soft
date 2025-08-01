@@ -125,6 +125,7 @@ func (c *ModbusTcpClient) connectAndSubscribeOnce(channel chan Value) (err error
 					Value:      registerValues,
 					CreateTime: time.Now(),
 					Type:       "ArrayUnit16",
+					DeviceId:   device.DeviceId,
 				}
 
 				select {

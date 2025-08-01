@@ -6,7 +6,6 @@ import (
 	"devinggo/manage/pkg/gateway"
 	"devinggo/manage/service/manage"
 	"devinggo/modules/system/model"
-	"fmt"
 	"time"
 
 	"github.com/gogf/gf/v2/encoding/gjson"
@@ -59,13 +58,7 @@ func InitDeviceGateway() {
 				g := gjson.New(nil, false)
 				g.Set("id", sensor.Id)
 				g.Set("nodeId", opc.NodeId)
-				// jsonB, err := gjson.Marshal(map[string]interface{}{
-				// 	"id":     sensor.Id,
-				// 	"nodeId": opc.NodeId,
-				// })
-				// if err != nil {
-				// 	continue
-				// }
+				g.Set("deviceId", sensor.DeviceId)
 				c.AddNodes(g)
 			}
 
@@ -97,9 +90,6 @@ func InitDeviceGateway() {
 
 	channel := DeviceGateway.RegisterChannel(1000)
 	for v := range channel {
-		fmt.Println("注册开始监听============")
-		fmt.Println("Received value============:", v.Value, "from channel")
 		manage.ManageInfluxdb().StoreDataChannel(context.Background(), v)
-
 	}
 }

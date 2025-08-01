@@ -155,13 +155,20 @@ func (s *sInfluxdb) Store(ctx context.Context, data common.TemplateEnv, sensorId
 }
 
 func (s *sInfluxdb) StoreDataChannel(ctx context.Context, msg gateway.Msg) (err error) {
-	err = s.Store(ctx, common.TemplateEnv{
+
+	v := common.TemplateEnv{
 		Value: common.Value{
 			Value: msg.Value.Value,
 		},
 		Type:       msg.Value.Type,
 		CreateTime: msg.Value.CreateTime,
-	}, msg.Value.ID)
+	}
+
+	// 存储redis
+	fmt.Println("存储到redis", msg.Value.ID, v)
+	manage.ManageSensorCache().Store(ctx, msg.Value.ID, v)
+
+	err = s.Store(ctx, v, msg.Value.ID)
 
 	return
 }

@@ -76,8 +76,9 @@ func (c *Client) AddNodes(nodes ...*gjson.Json) {
 		for _, node := range nodes {
 			fmt.Println(node.Get("nodeId").String())
 			n = append(n, OpcNode{
-				NodeId: node.Get("nodeId").String(),
-				ID:     node.Get("id").Int64(),
+				NodeId:   node.Get("nodeId").String(),
+				ID:       node.Get("id").Int64(),
+				DeviceId: node.Get("deviceId").Int64(),
 			})
 		}
 		v.AddNodes(n...)

@@ -16,8 +16,9 @@ import (
 type OpcNodes []OpcNode
 
 type OpcNode struct {
-	ID     int64
-	NodeId string
+	ID       int64
+	NodeId   string
+	DeviceId int64
 }
 
 type OpcClient struct {
@@ -69,7 +70,7 @@ func (c *OpcClient) TestPing() (err error) {
 	}
 	defer client.Close(ctx)
 
-	log.Println("[SUCCESS] 成功连接到 OPC UA 服务器")
+	log.Println("[SUCCESS] 成功连接到 OPC UA 服务器", len(c.nodes))
 	return
 }
 
@@ -161,6 +162,9 @@ func (c *OpcClient) startCallbackSub(ctx context.Context, m *monitor.NodeMonitor
 
 func (c *OpcClient) startChanSub(ctx context.Context, m *monitor.NodeMonitor, interval, lag time.Duration, wg *sync.WaitGroup, nodes ...string) {
 	ch := make(chan *monitor.DataChangeMessage, 16)
+	for _, v := range c.nodes {
+		nodes = append(nodes, v.NodeId)
+	}
 	sub, err := m.ChanSubscribe(ctx, &opcua.SubscriptionParameters{Interval: interval}, ch, nodes...)
 	if err != nil {
 		log.Fatal(err)
@@ -172,7 +176,6 @@ func (c *OpcClient) startChanSub(ctx context.Context, m *monitor.NodeMonitor, in
 		case <-ctx.Done():
 			return
 		case <-time.After(5 * time.Second):
-			fmt.Println("====================进入5s后")
 			if err = c.TestPing(); err != nil {
 				c.isOnline = false
 				c.client.Close(ctx)
@@ -225,11 +228,11 @@ func cleanup(ctx context.Context, sub *monitor.Subscription, wg *sync.WaitGroup)
 func (c *OpcClient) AddNodes(nodes ...OpcNode) {
 	for _, v := range nodes {
 		if !slices.Contains(c.nodes, v) {
+			c.nodes = append(c.nodes, v)
 			if c.sub == nil {
 				return
 			}
 			c.sub.AddNodes(c.ctx, v.NodeId)
-			c.nodes = append(c.nodes, v)
 		}
 	}
 }
