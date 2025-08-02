@@ -35,6 +35,7 @@ type (
 		GetPageListForSearch(ctx context.Context, req *model.PageListReq, in *req.ManageAlarmLabelSearch) (rs []*res.AlarmLabelTableRow, total int, err error)
 		Save(ctx context.Context, in *req.ManageAlarmLabelSave) (id int64, err error)
 		Delete(ctx context.Context, ids []int64) (err error)
+		Read(ctx context.Context, alarmLabelId int64) (alarmLabelInfo *res.AlarmLabelInfo, err error)
 	}
 
 	IManageServer interface {
@@ -106,6 +107,11 @@ type (
 		DeleteDevice(ctx context.Context, sensorId int64) (v *gvar.Var, err error)
 	}
 
+	IManageSensorTemplateCache interface {
+		Get(ctx context.Context, sensorId int64) (template string, err error)
+		Store(ctx context.Context, sensorId int64) (template string, err error)
+	}
+
 	IManageThreshold interface {
 		Model(ctx context.Context) *gdb.Model
 		Save(ctx context.Context, in *req.ThresholdRow) (id int64, err error)
@@ -114,20 +120,47 @@ type (
 		AddThreshold(ctx context.Context, in *req.ManageThresholdAddReq) (err error)
 		GetSensorThresholds(ctx context.Context, sensorId int64) (out []*req.ThresholdRow, err error)
 	}
+
+	IManageThresholdCache interface {
+		Model(ctx context.Context) *gredis.Redis
+		Get(ctx context.Context, sensorId int64) (out []*req.ThresholdRow, err error)
+		Store(ctx context.Context, sensorId int64) (out []*req.ThresholdRow, err error)
+	}
+
+	IManageEvent interface {
+		Save(ctx context.Context, in *req.ManageEventReq) (id int64, err error)
+		CheckEvent(ctx context.Context, sensorId int64, value common.TemplateEnv) (id int64, err error)
+		GetPageListForSearch(ctx context.Context, req *model.PageListReq, in *req.ManageEventSearch) (res []*res.EventTableRow, total int, err error)
+	}
+
+	IManageAlarm interface {
+		Save(ctx context.Context, in req.ManageAlarmSave) (id int64, err error)
+		Read(ctx context.Context, alarmId int64) (alarmInfo *res.AlarmInfo, err error)
+		GetPageListForSearch(ctx context.Context, req *model.PageListReq, in *req.ManageAlarmSearch) (res []*res.AlarmTableRow, total int, err error)
+		Delete(ctx context.Context, ids []int64) (err error)
+	}
+
+	IManageSensorControl interface {
+	}
 )
 
 var (
-	localManageArea        IManageArea
-	localManageAlarm       IManageAlarmLabel
-	localManageServer      IManageServer
-	localManageDevice      IManageDevice
-	localManageSensorType  IManageSensorType
-	localManageSensor      IManageSensor
-	localManageOpc         IManageOpc
-	localInfluxdb          IManageInfluxdb
-	localModbus            IManageModbus
-	localManageSensorCache IManageSensorCache
-	localManageThreshold   IManageThreshold
+	localManageArea                IManageArea
+	localManageAlarmLabel          IManageAlarmLabel
+	localManageServer              IManageServer
+	localManageDevice              IManageDevice
+	localManageSensorType          IManageSensorType
+	localManageSensor              IManageSensor
+	localManageOpc                 IManageOpc
+	localInfluxdb                  IManageInfluxdb
+	localModbus                    IManageModbus
+	localManageSensorCache         IManageSensorCache
+	localManageThreshold           IManageThreshold
+	localManageThresholdCache      IManageThresholdCache
+	localManageEvent               IManageEvent
+	localManageSensorTemplateCache IManageSensorTemplateCache
+	localManageAlarm               IManageAlarm
+	localManageSensorControl       IManageSensorControl
 )
 
 func ManageArea() IManageArea {
@@ -142,14 +175,14 @@ func RegisterManageArea(i IManageArea) {
 }
 
 func ManageAlarmLabel() IManageAlarmLabel {
-	if localManageAlarm == nil {
-		panic("implement not found for interface IManageAlarm, forgot register?")
+	if localManageAlarmLabel == nil {
+		panic("implement not found for interface IManageAlarmLabel, forgot register?")
 	}
-	return localManageAlarm
+	return localManageAlarmLabel
 }
 
 func RegisterManageAlarmLabel(i IManageAlarmLabel) {
-	localManageAlarm = i
+	localManageAlarmLabel = i
 }
 
 func ManageServer() IManageServer {
@@ -249,4 +282,60 @@ func ManageThreshold() IManageThreshold {
 
 func RegisterManageThreshold(i IManageThreshold) {
 	localManageThreshold = i
+}
+
+func ManageThresholdCache() IManageThresholdCache {
+	if localManageThresholdCache == nil {
+		panic("implement not found for interface localManageThresholdCache, forgot register?")
+	}
+	return localManageThresholdCache
+}
+
+func RegisterManageThresholdCache(i IManageThresholdCache) {
+	localManageThresholdCache = i
+}
+
+func ManageEvent() IManageEvent {
+	if localManageEvent == nil {
+		panic("implement not found for interface localManageEvent, forgot register?")
+	}
+	return localManageEvent
+}
+
+func RegisterManageEvent(i IManageEvent) {
+	localManageEvent = i
+}
+
+// IManageSensorTemplateCache
+func ManageSensorTemplateCache() IManageSensorTemplateCache {
+	if localManageSensorTemplateCache == nil {
+		panic("implement not found for interface localManageSensorTemplateCache, forgot register?")
+	}
+	return localManageSensorTemplateCache
+}
+
+func RegisterManageSensorTemplateCache(i IManageSensorTemplateCache) {
+	localManageSensorTemplateCache = i
+}
+
+func ManageAlarm() IManageAlarm {
+	if localManageAlarm == nil {
+		panic("implement not found for interface localManageSensorTemplateCache, forgot register?")
+	}
+	return localManageAlarm
+}
+
+func RegisterManageAlarm(i IManageAlarm) {
+	localManageAlarm = i
+}
+
+func ManageSensorControl() IManageSensorControl {
+	if localManageSensorControl == nil {
+		panic("implement not found for interface localManageSensorControl, forgot register?")
+	}
+	return localManageSensorControl
+}
+
+func RegisterManageSensorControl(i IManageSensorControl) {
+	localManageSensorControl = i
 }

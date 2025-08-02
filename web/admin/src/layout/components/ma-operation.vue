@@ -76,78 +76,88 @@
 
 
 <script setup>
-  import { ref,onMounted, onBeforeUnmount } from 'vue'
-  import { useAppStore, useUserStore, useMessageStore } from '@/store'
-  import tool from '@/utils/tool'
-  import MessageNotification from './components/message-notification.vue'
-  import { useRouter } from 'vue-router'
-  import { useI18n } from 'vue-i18n'
-  import { Message } from '@arco-design/web-vue'
-  import Msg from '@/ws-serve/msg'
-  import { info } from '@/utils/common'
-  import commonApi from '@/api/common'
-  import LockScreen from '@/components/LockScreen.vue';
-  const { t } = useI18n()
-  const messageStore = useMessageStore()
-  const userStore = useUserStore()
-  const appStore  = useAppStore()
-  const setting = ref(null)
-  const router = useRouter()
-  const isFullScreen = ref(false)
-  const showLogoutModal = ref(false)
-  const isDev = ref(import.meta.env.DEV)
+import { ref, onMounted, onBeforeUnmount, h } from 'vue'
+import { useAppStore, useUserStore, useMessageStore } from '@/store'
+import tool from '@/utils/tool'
+import MessageNotification from './components/message-notification.vue'
+import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { Message } from '@arco-design/web-vue'
+import Msg from '@/ws-serve/msg'
+import { info, error } from '@/utils/common'
+import commonApi from '@/api/common'
+import LockScreen from '@/components/LockScreen.vue';
 
-  const isLocked = ref(false);
-  isLocked.value = appStore.getIsLocked();
 
-  const updateVisible = (visible) => {
-    isLocked.value = visible;
+const { t } = useI18n()
+const messageStore = useMessageStore()
+const userStore = useUserStore()
+const appStore = useAppStore()
+const setting = ref(null)
+const router = useRouter()
+const isFullScreen = ref(false)
+const showLogoutModal = ref(false)
+const isDev = ref(import.meta.env.DEV)
+
+const isLocked = ref(false);
+isLocked.value = appStore.getIsLocked();
+
+const updateVisible = (visible) => {
+  isLocked.value = visible;
+}
+
+const openLockScreen = () => {
+  appStore.setIsLocked(true);
+  isLocked.value = true;
+}
+
+const handleSelect = async (name) => {
+  if (name === 'userCenter') {
+    router.push({ name: 'userCenter' })
   }
-
-  const openLockScreen = () => {
-    appStore.setIsLocked(true);
-    isLocked.value = true;
+  if (name === 'clearCache') {
+    const res = await commonApi.clearAllCache()
+    tool.local.remove('dictData')
+    res.success && Message.success(res.message)
   }
+  if (name === 'logout') {
+    showLogoutModal.value = true
+    document.querySelector('#app').style.filter = 'grayscale(1)'
+  }
+}
 
-  const handleSelect = async (name) => {
-    if (name === 'userCenter') {
-      router.push({ name: 'userCenter'})
+const handleLogout = async () => {
+  await userStore.logout()
+  document.querySelector('#app').style.filter = 'grayscale(0)'
+  router.push({ name: 'login' })
+}
+
+const handleLogoutCancel = () => {
+  document.querySelector('#app').style.filter = 'grayscale(0)'
+}
+
+const screen = () => {
+  tool.screen(document.documentElement)
+  isFullScreen.value = !isFullScreen.value
+}
+
+if (appStore.ws) {
+  const Wsm = new Msg()
+  Wsm.ws.on("ev_new_message", (data, ws) => {
+    if (data.d.length > messageStore.messageList.length) {
+      info('新消息提示', '您有新的消息，请注意查收！')
     }
-    if (name === 'clearCache') {
-      const res = await commonApi.clearAllCache()
-      tool.local.remove('dictData')
-      res.success && Message.success(res.message)
-    }
-    if (name === 'logout') {
-      showLogoutModal.value = true
-      document.querySelector('#app').style.filter = 'grayscale(1)'
-    }
-  }
-
-  const handleLogout = async () => {
-    await userStore.logout()
-    document.querySelector('#app').style.filter = 'grayscale(0)'
-    router.push({name:'login'})
-  }
-
-  const handleLogoutCancel = () => {
-    document.querySelector('#app').style.filter = 'grayscale(0)'
-  }
-
-  const screen = () => {
-    tool.screen(document.documentElement)
-    isFullScreen.value = !isFullScreen.value
-  }
-
-  if (appStore.ws) {
-    const Wsm = new Msg()
-    Wsm.ws.on("ev_new_message", (data, ws) => {
-      if (data.d.length > messageStore.messageList.length) {
-        info('新消息提示', '您有新的消息，请注意查收！')
-      }
-      messageStore.messageList = data.d
-    });
-  }
+    messageStore.messageList = data.d
+  });
+  // 报警的消息
+  Wsm.ws.on("alarm", (data, ws) => {
+    console.log("aaaaaaa", data)
+    // Notification.warning("触发报警了!!!")
+    error("报警触发",h("div",{
+      innerHTML: "<p>1</p>"
+    }))
+  })
+}
 
 </script>
 <style scoped>

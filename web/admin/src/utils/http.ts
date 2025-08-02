@@ -74,11 +74,11 @@ function createRequest<T>(
         delete config.headers;
         const option: CustomRequestConfig = { ...configDefault, ...config };
 
-        // Handle query parameters
-        if (!isEmpty(option.params)) {
-            option.url = `${option.url}?${stringify(option.params)}`;
-            option.params = {};
-        }
+        // // Handle query parameters
+        // if (!isEmpty(option.params)) {
+        //     option.url = `${option.url}?${stringify(option.params)}`;
+        //     option.params = {};
+        // }
 
         // Determine base URL based on whether the URL is external
         if (!/^(http|https)/g.test(option.url!)) {

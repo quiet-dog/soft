@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	_ "github.com/gogf/gf/contrib/nosql/redis/v2"
 	"github.com/gogf/gf/v2/database/gredis"
 	"github.com/gogf/gf/v2/frame/g"
@@ -37,15 +35,8 @@ func main() {
 		Name  string
 		Score []User
 	}
-	u := User{
-		Id:   1,
-		Name: "123",
-		Score: []User{
-			{Id: 2, Name: "123333"},
-		},
-	}
 
-	_, err := g.Redis(group).Set(ctx, "user", u)
+	_, err := g.Redis(group).Set(ctx, "user", "1111")
 	if err != nil {
 		g.Log().Fatal(ctx, err)
 	}
@@ -53,12 +44,8 @@ func main() {
 	if err != nil {
 		g.Log().Fatal(ctx, err)
 	}
-
-	b := User{}
-	if err = va.Scan(&b); err != nil {
-		g.Log().Fatal(ctx, err)
+	if va.IsEmpty() || va.IsNil() {
+		panic("22")
 	}
-
-	fmt.Println(b)
 
 }

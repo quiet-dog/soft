@@ -91,5 +91,6 @@ func InitDeviceGateway() {
 	channel := DeviceGateway.RegisterChannel(1000)
 	for v := range channel {
 		manage.ManageInfluxdb().StoreDataChannel(context.Background(), v)
+
 	}
 }

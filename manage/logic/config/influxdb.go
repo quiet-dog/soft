@@ -165,9 +165,13 @@ func (s *sInfluxdb) StoreDataChannel(ctx context.Context, msg gateway.Msg) (err 
 	}
 
 	// 存储redis
-	fmt.Println("存储到redis", msg.Value.ID, v)
 	manage.ManageSensorCache().Store(ctx, msg.Value.ID, v)
 
+	// 是否报警
+	fmt.Println("=====================是否报警")
+	manage.ManageEvent().CheckEvent(ctx, msg.Value.ID, v)
+
+	// 存储到influxdb
 	err = s.Store(ctx, v, msg.Value.ID)
 
 	return

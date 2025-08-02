@@ -17,7 +17,8 @@ export default {
             data: {
                 sensorId,
                 thresholds
-            }
+            },
+            method: 'post'
         })
     }
 }

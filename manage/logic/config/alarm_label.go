@@ -62,6 +62,15 @@ func (s *sAlarmLabel) Delete(ctx context.Context, ids []int64) (err error) {
 	return
 }
 
+func (s *sAlarmLabel) Read(ctx context.Context, alarmLabelId int64) (alarmLabelInfo *res.AlarmLabelInfo, err error) {
+	alarmLabelInfo = &res.AlarmLabelInfo{}
+	err = s.Model(ctx).Where(dao.ManageAlarmLabel.Columns().Id, alarmLabelId).Scan(&alarmLabelInfo)
+	if utils.IsError(err) {
+		return
+	}
+	return
+}
+
 func (s *sAlarmLabel) handleAlarmLabelSearch(ctx context.Context, in *req.ManageAlarmLabelSearch) *gdb.Model {
 	m := s.Model(ctx)
 	if in.Name != "" {

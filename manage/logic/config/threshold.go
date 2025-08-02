@@ -116,7 +116,7 @@ func (s *sThreshold) AddThreshold(ctx context.Context, in *req.ManageThresholdAd
 			return
 		}
 	}
-
+	manage.ManageThresholdCache().Store(ctx, in.SensorId)
 	return
 }
 

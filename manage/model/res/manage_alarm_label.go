@@ -9,3 +9,7 @@ type AlarmLabelTableRow struct {
 	Level  string `json:"level" description:"标签等级"` // 标签等级
 	Color  string `json:"color" description:"标签颜色"` // 标签颜色
 }
+
+type AlarmLabelInfo struct {
+	AlarmLabelTableRow
+}

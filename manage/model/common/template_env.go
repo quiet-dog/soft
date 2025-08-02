@@ -28,6 +28,7 @@ func (temp *TemplateEnv) PrepareExprEnv() map[string]interface{} {
 	}
 }
 
+// 原始的数据
 func (v *Value) ToValue() interface{} {
 	switch val := v.Value.(type) {
 	case json.Number:
@@ -58,6 +59,7 @@ func (v *Value) ToValue() interface{} {
 	}
 }
 
+// 不根据expr转换为需要向influxdb插入的数据
 func (v *Value) ToValueInfluxdb() string {
 	switch val := v.Value.(type) {
 	case int, int64, int32:
@@ -113,6 +115,7 @@ func (v *Value) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// 根据expx转为用户真正需要的数据
 func (v *Value) ToValueExpr(template string) any {
 	if template == "" {
 		return v.ToValue()
@@ -133,6 +136,7 @@ func (v *Value) ToValueExpr(template string) any {
 	return result
 }
 
+// 根据expr转换为需要向influxdb插入的数据
 func (v *Value) ToValueExprInfluxdb(template string) string {
 	switch val := v.ToValueExpr(template).(type) {
 	case int, int64, int32, uint16:
@@ -145,5 +149,38 @@ func (v *Value) ToValueExprInfluxdb(template string) string {
 		return fmt.Sprintf("%t", val)
 	default:
 		return fmt.Sprintf("\"%v\"", val) // fallback，防止 panic
+	}
+}
+
+// 根据expr转为float64
+func (v *Value) ToValueExprFloat64(template string) float64 {
+	data := v.ToValueExpr(template)
+	switch val := data.(type) {
+	case float64:
+		return val
+	case int:
+		return float64(val)
+	case int8:
+		return float64(val)
+	case int16:
+		return float64(val)
+	case int32:
+		return float64(val)
+	case int64:
+		return float64(val)
+	case uint:
+		return float64(val)
+	case uint8:
+		return float64(val)
+	case uint16:
+		return float64(val)
+	case uint32:
+		return float64(val)
+	case uint64:
+		return float64(val)
+	case float32:
+		return float64(val)
+	default:
+		return 0
 	}
 }
