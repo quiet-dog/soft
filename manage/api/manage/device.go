@@ -85,3 +85,13 @@ type DeviceTestConnectReq struct {
 type DeviceTestConnectRes struct {
 	g.Meta `mime:"application/json"`
 }
+
+type DeviceImportModelReq struct {
+	g.Meta `path:"/device/importModel" tags:"Device" method:"post" summary:"测试设备连通性" x-permission:"manage:device:importModel"`
+	model.AuthorHeader
+	req.DeviceImportModelReq
+}
+
+type DeviceImportModelRes struct {
+	g.Meta `mime:"application/json"`
+}

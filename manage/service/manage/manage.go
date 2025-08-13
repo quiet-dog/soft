@@ -57,6 +57,7 @@ type (
 		GetInfoByIds(ctx context.Context, deviceIds []int64) (DeviceInfos []*res.DeviceInfo, err error)
 		Read(ctx context.Context, deviceId int64) (DeviceInfo *res.DeviceInfo, err error)
 		TestConnect(ctx context.Context, in *req.DeviceTestConnectReq) (err error)
+		ImportModel(ctx context.Context, in *req.DeviceImportModelReq) (err error)
 		// GetOpc(ctx context.Context, deviceId int64) (opc *res.OpcInfo, err error)
 	}
 
@@ -140,7 +141,14 @@ type (
 		Delete(ctx context.Context, ids []int64) (err error)
 	}
 
-	IManageSensorControl interface {
+	IManageDeviceControl interface {
+		GetPageListForSearch(ctx context.Context, req *model.PageListReq, in *req.ManageDeviceControlSearch) (res []*res.DeviceControlTableRow, total int, err error)
+		Save(ctx context.Context, in *req.ManageDeviceControlSave) (id int64, err error)
+		Delete(ctx context.Context, ids []int64) (err error)
+		Read(ctx context.Context, sensorId int64) (deviceControlInfo *res.DeviceControlInfo, err error)
+		UpdateInfo(ctx context.Context, in *req.ManageDeviceControlInfo) (out sql.Result, err error)
+		AddControl(ctx context.Context, in *req.ManageAddDeviceControlInfo) (err error)
+		Control(ctx context.Context, controlId int64) (err error)
 	}
 )
 
@@ -160,7 +168,7 @@ var (
 	localManageEvent               IManageEvent
 	localManageSensorTemplateCache IManageSensorTemplateCache
 	localManageAlarm               IManageAlarm
-	localManageSensorControl       IManageSensorControl
+	localManageDeviceControl       IManageDeviceControl
 )
 
 func ManageArea() IManageArea {
@@ -329,13 +337,13 @@ func RegisterManageAlarm(i IManageAlarm) {
 	localManageAlarm = i
 }
 
-func ManageSensorControl() IManageSensorControl {
-	if localManageSensorControl == nil {
-		panic("implement not found for interface localManageSensorControl, forgot register?")
+func ManageDeviceControl() IManageDeviceControl {
+	if localManageDeviceControl == nil {
+		panic("implement not found for interface localManageDeviceControl, forgot register?")
 	}
-	return localManageSensorControl
+	return localManageDeviceControl
 }
 
-func RegisterManageSensorControl(i IManageSensorControl) {
-	localManageSensorControl = i
+func RegisterManageDeviceControl(i IManageDeviceControl) {
+	localManageDeviceControl = i
 }

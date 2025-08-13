@@ -35,6 +35,7 @@ type ManageDeviceColumns struct {
 	DeletedAt            string // 删除时间
 	Remark               string // 备注
 	Extend               string // 扩展信息
+	ModelPath            string // 模型路径
 }
 
 // manageDeviceColumns holds the columns for the table manage_device.
@@ -53,6 +54,7 @@ var manageDeviceColumns = ManageDeviceColumns{
 	DeletedAt:            "deleted_at",
 	Remark:               "remark",
 	Extend:               "extend",
+	ModelPath:            "model_path",
 }
 
 // NewManageDeviceDao creates and returns a new DAO object for table data access.

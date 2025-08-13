@@ -119,17 +119,39 @@ func (c *Client) IsOnline() bool {
 	return false
 }
 
+func (c *Client) Control(commands ...gjson.Json) (err error) {
+	// opc 设备的节点添加
+	if v, ok := c.client.(*ModbusTcpClient); ok {
+		return v.Control(commands...)
+	}
+
+	if v, ok := c.client.(*OpcClient); ok {
+		return v.Control(commands...)
+	}
+
+	return
+}
+
 func (c *Client) Channel() chan Value {
 	return c.channel
 }
 
 func (c *Client) Close() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Recovered from panic in client.Close(): %v", r)
+		}
+	}()
 	if v, ok := c.client.(*OpcClient); ok {
-		v.client.Close(v.ctx)
+		if c.client != nil && v.ctx != nil {
+			v.client.Close(v.ctx)
+		}
 	}
 
 	if v, ok := c.client.(*ModbusTcpClient); ok {
-		v.cancel()
+		if c.client != nil && v.cancel != nil {
+			v.cancel()
+		}
 	}
 
 	close(c.channel)

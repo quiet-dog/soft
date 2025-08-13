@@ -35,6 +35,7 @@ type ManageServerColumns struct {
 	DeletedAt string // 删除时间
 	Remark    string // 备注
 	Interval  string //
+	Extend    string //
 }
 
 // manageServerColumns holds the columns for the table manage_server.
@@ -53,6 +54,7 @@ var manageServerColumns = ManageServerColumns{
 	DeletedAt: "deleted_at",
 	Remark:    "remark",
 	Interval:  "interval",
+	Extend:    "extend",
 }
 
 // NewManageServerDao creates and returns a new DAO object for table data access.

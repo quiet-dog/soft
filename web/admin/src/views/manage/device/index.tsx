@@ -2,7 +2,6 @@ import { BasicColumn, BasicCrud } from "@/components/ma-crud/types"
 import { defineAsyncComponent, reactive, ref } from "vue"
 import device from "@/api/manage/device"
 import { getTreeAreaChildren } from "@/views/manage/area/index"
-import { TreeLeaf } from "@/api/manage/base"
 import server from "@/api/manage/server"
 import { ServerTreeLeaf } from "@/api/manage/server/types"
 

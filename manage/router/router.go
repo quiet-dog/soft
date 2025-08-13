@@ -19,6 +19,7 @@ func BindController(group *ghttp.RouterGroup) {
 			manage.ThresholdController,
 			manage.AlarmController,
 			manage.EventController,
+			manage.DeviceControlController,
 		)
 	})
 

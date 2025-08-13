@@ -18,7 +18,8 @@ export interface DeviceEdit extends DeviceAdd, BaseId {
 export interface DeviceRow extends BaseRow, DeviceEdit {
     areaName: string;
     serverName: string;
-    extend?: any
+    extend?: any;
+    modelPath?: string;
 }
 
 export interface DeviceSearch extends DeviceAdd, BasePageReq {

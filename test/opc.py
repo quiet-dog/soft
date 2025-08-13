@@ -65,7 +65,7 @@ try:
         print(f"ExtraDevice.ExtraSensor1 = {extra_var1.get_value()}")
         print(f"ExtraDevice.ExtraSensor2 = {extra_var2.get_value()}")
 
-        time.sleep(2)
+        time.sleep(4)
 
 except KeyboardInterrupt:
     print("Shutting down server...")

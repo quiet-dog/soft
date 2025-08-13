@@ -43,5 +43,15 @@ export default {
             method: 'post',
             data
         })
+    },
+    importModel(deviceId: number, path: string) {
+        return http({
+            url: '/manage/device/importModel',
+            method: 'post',
+            data: {
+                deviceId,
+                path
+            }
+        })
     }
 }

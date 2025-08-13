@@ -3,6 +3,8 @@ package gateway
 import (
 	"fmt"
 	"log"
+
+	"github.com/gogf/gf/v2/encoding/gjson"
 )
 
 type Gateway struct {
@@ -44,6 +46,14 @@ func (g *Gateway) GetClient(serviceId int64) (*Client, bool) {
 	}
 	log.Printf("[WARN] 设备 %d 的客户端不存在", serviceId)
 	return nil, false
+}
+
+func (g *Gateway) Control(serviceId int64, commands ...gjson.Json) (err error) {
+	if client, ok := g.Devices.Load(serviceId); ok {
+		return client.Control(commands...)
+	}
+	log.Printf("[WARN] 设备 %d 的客户端不存在", serviceId)
+	return fmt.Errorf("设备不存在")
 }
 
 // 更新客户端配置

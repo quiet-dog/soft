@@ -11,19 +11,19 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 )
 
-// ManageSensorControlDao is the data access object for the table manage_sensor_control.
-type ManageSensorControlDao struct {
+// ManageDeviceControlDao is the data access object for the table manage_device_control.
+type ManageDeviceControlDao struct {
 	table    string                     // table is the underlying table name of the DAO.
 	group    string                     // group is the database configuration group name of the current DAO.
-	columns  ManageSensorControlColumns // columns contains all the column names of Table for convenient usage.
+	columns  ManageDeviceControlColumns // columns contains all the column names of Table for convenient usage.
 	handlers []gdb.ModelHandler         // handlers for customized model modification.
 }
 
-// ManageSensorControlColumns defines and stores column names for the table manage_sensor_control.
-type ManageSensorControlColumns struct {
+// ManageDeviceControlColumns defines and stores column names for the table manage_device_control.
+type ManageDeviceControlColumns struct {
 	Id        string // 主键
 	Name      string // 命令作用描述
-	SensorId  string // 设备Id
+	DeviceId  string // 设备Id
 	Extend    string //
 	CreatedBy string // 创建者
 	UpdatedBy string // 更新者
@@ -33,11 +33,11 @@ type ManageSensorControlColumns struct {
 	Remark    string // 备注
 }
 
-// manageSensorControlColumns holds the columns for the table manage_sensor_control.
-var manageSensorControlColumns = ManageSensorControlColumns{
+// manageDeviceControlColumns holds the columns for the table manage_device_control.
+var manageDeviceControlColumns = ManageDeviceControlColumns{
 	Id:        "id",
 	Name:      "name",
-	SensorId:  "sensor_id",
+	DeviceId:  "device_id",
 	Extend:    "extend",
 	CreatedBy: "created_by",
 	UpdatedBy: "updated_by",
@@ -47,38 +47,38 @@ var manageSensorControlColumns = ManageSensorControlColumns{
 	Remark:    "remark",
 }
 
-// NewManageSensorControlDao creates and returns a new DAO object for table data access.
-func NewManageSensorControlDao(handlers ...gdb.ModelHandler) *ManageSensorControlDao {
-	return &ManageSensorControlDao{
+// NewManageDeviceControlDao creates and returns a new DAO object for table data access.
+func NewManageDeviceControlDao(handlers ...gdb.ModelHandler) *ManageDeviceControlDao {
+	return &ManageDeviceControlDao{
 		group:    "default",
-		table:    "manage_sensor_control",
-		columns:  manageSensorControlColumns,
+		table:    "manage_device_control",
+		columns:  manageDeviceControlColumns,
 		handlers: handlers,
 	}
 }
 
 // DB retrieves and returns the underlying raw database management object of the current DAO.
-func (dao *ManageSensorControlDao) DB() gdb.DB {
+func (dao *ManageDeviceControlDao) DB() gdb.DB {
 	return g.DB(dao.group)
 }
 
 // Table returns the table name of the current DAO.
-func (dao *ManageSensorControlDao) Table() string {
+func (dao *ManageDeviceControlDao) Table() string {
 	return dao.table
 }
 
 // Columns returns all column names of the current DAO.
-func (dao *ManageSensorControlDao) Columns() ManageSensorControlColumns {
+func (dao *ManageDeviceControlDao) Columns() ManageDeviceControlColumns {
 	return dao.columns
 }
 
 // Group returns the database configuration group name of the current DAO.
-func (dao *ManageSensorControlDao) Group() string {
+func (dao *ManageDeviceControlDao) Group() string {
 	return dao.group
 }
 
 // Ctx creates and returns a Model for the current DAO. It automatically sets the context for the current operation.
-func (dao *ManageSensorControlDao) Ctx(ctx context.Context) *gdb.Model {
+func (dao *ManageDeviceControlDao) Ctx(ctx context.Context) *gdb.Model {
 	model := dao.DB().Model(dao.table)
 	for _, handler := range dao.handlers {
 		model = handler(model)
@@ -92,6 +92,6 @@ func (dao *ManageSensorControlDao) Ctx(ctx context.Context) *gdb.Model {
 //
 // Note: Do not commit or roll back the transaction in function f,
 // as it is automatically handled by this function.
-func (dao *ManageSensorControlDao) Transaction(ctx context.Context, f func(ctx context.Context, tx gdb.TX) error) (err error) {
+func (dao *ManageDeviceControlDao) Transaction(ctx context.Context, f func(ctx context.Context, tx gdb.TX) error) (err error) {
 	return dao.Ctx(ctx).Transaction(ctx, f)
 }

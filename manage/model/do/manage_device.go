@@ -27,4 +27,5 @@ type ManageDevice struct {
 	DeletedAt            *gtime.Time // 删除时间
 	Remark               interface{} // 备注
 	Extend               *gjson.Json // 扩展信息
+	ModelPath            interface{} // 模型路径
 }

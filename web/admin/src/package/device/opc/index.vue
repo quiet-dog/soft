@@ -4,8 +4,9 @@ import opc from '@/api/manage/opc';
 import { ref } from 'vue';
 import { ExtendType } from ".";
 
-const { sExtend } = defineProps<{
-    sExtend: ExtendType
+const { sExtend, serverId = 0 } = defineProps<{
+    sExtend: ExtendType;
+    serverId: number
 }>()
 
 const visible = defineModel({
@@ -23,9 +24,7 @@ const emit = defineEmits<{
 
 
 const treeData = ref<TreeLeaf[]>([]);
-const { serverId = 0 } = defineProps<{
-    serverId: number
-}>()
+
 
 
 const loadMore = (nodeData) => {

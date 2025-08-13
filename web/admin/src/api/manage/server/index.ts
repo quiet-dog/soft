@@ -43,5 +43,11 @@ export default {
             method: 'put',
             data
         })
+    },
+    types() {
+        return http({
+            url: "/manage/server/types",
+            method: 'get',
+        })
     }
 }

@@ -25,5 +25,6 @@ type DeviceTableRow struct {
 
 type DeviceInfo struct {
 	DeviceTableRow
-	Server *ServerTableRow `json:"server" description:"服务器信息"` // 服务器信息
+	Server    *ServerTableRow `json:"server" description:"服务器信息"`   // 服务器信息
+	ModelPath string          `json:"modelPath" description:"模型路径"` // 模型路径
 }

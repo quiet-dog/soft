@@ -25,4 +25,5 @@ type ManageDevice struct {
 	DeletedAt            *gtime.Time `json:"deletedAt"            orm:"deleted_at"            description:"删除时间"`   // 删除时间
 	Remark               string      `json:"remark"               orm:"remark"                description:"备注"`     // 备注
 	Extend               *gjson.Json `json:"extend"               orm:"extend"                description:"扩展信息"`   // 扩展信息
+	ModelPath            string      `json:"modelPath"            orm:"model_path"            description:"模型路径"`   // 模型路径
 }

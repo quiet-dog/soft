@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/goburrow/modbus"
+	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/os/gcron"
 )
 
@@ -25,6 +26,7 @@ type ModbusSensor struct {
 	StartAddress uint16 `json:"startAddress"`
 	Quantity     uint16 `json:"quantity"`
 	SensorId     int64  `json:"sensorId"`
+	ReadType     int64  `json:"readType"`
 }
 
 type ModbusDevice struct {
@@ -106,10 +108,23 @@ func (c *ModbusTcpClient) connectAndSubscribeOnce(channel chan Value) (err error
 		for _, device := range c.nodes {
 			for _, sensor := range device.Sensors {
 				client := modbus.NewClient(handler)
-				rs, err := client.ReadHoldingRegisters(sensor.StartAddress, sensor.Quantity)
-				if err != nil {
-					continue
+				var rs []byte
+				// 读寄存器
+				if sensor.ReadType == 1 {
+					rs, err = client.ReadHoldingRegisters(sensor.StartAddress, sensor.Quantity)
+					if err != nil {
+						continue
+					}
 				}
+
+				// 读写寄存器
+				if sensor.ReadType == 2 {
+					rs, err = client.ReadInputRegisters(sensor.StartAddress, sensor.Quantity)
+					if err != nil {
+						continue
+					}
+				}
+
 				if len(rs) < 2 || len(rs)%2 != 0 {
 					continue
 				}
@@ -167,4 +182,36 @@ func (c *ModbusTcpClient) AddNodes(devices ...ModbusDevice) {
 			c.nodes = append(c.nodes, &v)
 		}
 	}
+}
+
+func (c *ModbusTcpClient) Control(commands ...gjson.Json) (err error) {
+	for _, command := range commands {
+		startAddr := command.Get("startAddr").Uint16()
+		values := command.Get("value").Int64s()
+		handler := modbus.NewTCPClientHandler(fmt.Sprintf("%s:%s", c.conf.Host, c.conf.Port))
+		handler.Timeout = 3 * time.Second
+		handler.SlaveId = c.client.SlaveId
+		err = handler.Connect()
+		if err != nil {
+			return
+		}
+		defer handler.Close()
+
+		// 把 values 转成字节切片，Modbus寄存器每个2字节
+		byteValues := make([]byte, 0, len(values)*2)
+		for _, v := range values {
+			val := uint16(v) // 转uint16，注意超出范围需处理
+			high := byte(val >> 8)
+			low := byte(val & 0xFF)
+			byteValues = append(byteValues, high, low)
+		}
+
+		client := modbus.NewClient(handler)
+		_, err = client.WriteMultipleRegisters(startAddr, uint16(len(values)), byteValues)
+		if err != nil {
+			return
+		}
+	}
+
+	return
 }

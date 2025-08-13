@@ -5,6 +5,7 @@
 package entity
 
 import (
+	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/os/gtime"
 )
 
@@ -24,4 +25,5 @@ type ManageServer struct {
 	DeletedAt *gtime.Time `json:"deletedAt" orm:"deleted_at" description:"删除时间"`   // 删除时间
 	Remark    string      `json:"remark"    orm:"remark"     description:"备注"`     // 备注
 	Interval  int64       `json:"interval"  orm:"interval"   description:""`       //
+	Extend    *gjson.Json `json:"extend"    orm:"extend"     description:""`       //
 }

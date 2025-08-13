@@ -17,7 +17,8 @@ const emit = defineEmits<{
 
 const extend = ref({
     start: "",
-    quantity: 0
+    quantity: 0,
+    readType:0
 })
 
 
@@ -44,8 +45,13 @@ function handleOpen() {
     } else {
         extend.value.quantity = 0
         extend.value.start = ""
+        extend.value.readType = 1
     }
 
+}
+
+function changeSelect(value){
+    extend.value.readType = Number(value)
 }
 
 </script>
@@ -54,6 +60,16 @@ function handleOpen() {
     <AModal @open="handleOpen" @close="onClose" v-model:visible="visible" title="modbus节点配置" @ok="handleOk"
         @cancel="handleCancel">
         <AForm :model="extend">
+         <ARow>
+                <ACol>
+                    <AFormItem label="功能类型">
+                        <ASelect default-value="1" @change="changeSelect">
+                            <AOption value="1">读寄存器</AOption>
+                            <AOption value="2">读写寄存器</AOption>
+                        </ASelect>
+                    </AFormItem>
+                </ACol>
+            </ARow>
             <ARow>
                 <ACol>
                     <AFormItem label="起始地址">

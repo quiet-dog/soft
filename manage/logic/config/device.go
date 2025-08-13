@@ -145,6 +145,11 @@ func (s *sDevice) TestConnect(ctx context.Context, req *req.DeviceTestConnectReq
 	return s.handleDeviceConnect(serverInfo, req.Extend)
 }
 
+func (s *sDevice) ImportModel(ctx context.Context, req *req.DeviceImportModelReq) (err error) {
+	s.Model(ctx).WherePri(req.DeviceId).Data("model_path", req.Path).Update()
+	return
+}
+
 func (s *sDevice) handleDeviceSearch(ctx context.Context, in *req.ManageDeviceSearch) (query *gdb.Model) {
 	query = s.Model(ctx)
 	if in == nil {

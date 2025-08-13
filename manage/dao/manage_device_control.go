@@ -8,15 +8,15 @@ import (
 	"devinggo/manage/dao/internal"
 )
 
-// manageSensorControlDao is the data access object for the table manage_sensor_control.
+// manageDeviceControlDao is the data access object for the table manage_device_control.
 // You can define custom methods on it to extend its functionality as needed.
-type manageSensorControlDao struct {
-	*internal.ManageSensorControlDao
+type manageDeviceControlDao struct {
+	*internal.ManageDeviceControlDao
 }
 
 var (
-	// ManageSensorControl is a globally accessible object for table manage_sensor_control operations.
-	ManageSensorControl = manageSensorControlDao{internal.NewManageSensorControlDao()}
+	// ManageDeviceControl is a globally accessible object for table manage_device_control operations.
+	ManageDeviceControl = manageDeviceControlDao{internal.NewManageDeviceControlDao()}
 )
 
 // Add your custom methods and functionality below.

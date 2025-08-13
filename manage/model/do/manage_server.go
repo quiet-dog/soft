@@ -5,6 +5,7 @@
 package do
 
 import (
+	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
 )
@@ -26,4 +27,5 @@ type ManageServer struct {
 	DeletedAt *gtime.Time // 删除时间
 	Remark    interface{} // 备注
 	Interval  interface{} //
+	Extend    *gjson.Json //
 }

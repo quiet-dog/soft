@@ -3,6 +3,7 @@ import { reactive, ref } from "vue"
 import server from "@/api/manage/server"
 
 export default function useServerHook() {
+    const formType = ref('')
     const crud = reactive<BasicCrud>({
         api: server.list,
         showIndex: false,
@@ -17,7 +18,10 @@ export default function useServerHook() {
             show: true,
             api: server.deletes, auth: ['system:server:delete'],
         },
-        edit: { show: true, api: server.update, auth: ['manage:server:update'] }
+        edit: { show: true, api: server.update, auth: ['manage:server:update'] },
+        beforeEdit: (params) => {
+            return true
+        }
     })
     const columns = reactive([
         { title: 'ID', dataIndex: 'id', addDisplay: false, editDisplay: false, width: 50, hide: true },
@@ -68,6 +72,7 @@ export default function useServerHook() {
     return {
         crud,
         columns,
-        crudRef
+        crudRef,
+        formType
     }
 }

@@ -27,6 +27,7 @@ func InitDeviceGateway() {
 			Port:    server.Port,
 			Type:    server.Type,
 			SubTime: time.Duration(duration),
+			Extend:  server.Extend,
 		}
 
 		DeviceGateway.AddClient(server.Id, cfg)
@@ -75,6 +76,7 @@ func InitDeviceGateway() {
 							StartAddress: sensor.Extend.Get("start").Uint16(),
 							Quantity:     sensor.Extend.Get("quantity").Uint16(),
 							SensorId:     sensor.Id,
+							ReadType:     sensor.Extend.Get("readType").Int64(),
 						}
 					}
 				}

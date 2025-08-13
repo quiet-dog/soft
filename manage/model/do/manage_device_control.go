@@ -10,12 +10,12 @@ import (
 	"github.com/gogf/gf/v2/os/gtime"
 )
 
-// ManageSensorControl is the golang structure of table manage_sensor_control for DAO operations like Where/Data.
-type ManageSensorControl struct {
-	g.Meta    `orm:"table:manage_sensor_control, do:true"`
+// ManageDeviceControl is the golang structure of table manage_device_control for DAO operations like Where/Data.
+type ManageDeviceControl struct {
+	g.Meta    `orm:"table:manage_device_control, do:true"`
 	Id        interface{} // 主键
 	Name      interface{} // 命令作用描述
-	SensorId  interface{} // 设备Id
+	DeviceId  interface{} // 设备Id
 	Extend    *gjson.Json //
 	CreatedBy interface{} // 创建者
 	UpdatedBy interface{} // 更新者

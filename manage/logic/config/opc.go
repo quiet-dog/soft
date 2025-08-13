@@ -41,6 +41,26 @@ func (s *sOpc) Model(ctx context.Context) *gdb.Model {
 	return dao.ManageOpc.Ctx(ctx).Hook(hook.Bind()).Cache(orm.SetCacheOption(ctx)).OnConflict("id")
 }
 
+func isWritable(c *opcua.Client, nodeID *ua.NodeID) bool {
+	n := c.Node(nodeID)
+
+	// 先尝试 AccessLevelEx
+	if val, err := n.Attribute(context.Background(), ua.AttributeIDAccessLevelEx); err == nil {
+		if accessLevel, ok := val.Value().(uint32); ok {
+			return accessLevel&uint32(ua.AccessLevelExTypeCurrentWrite) != 0
+		}
+	}
+
+	// 回退到普通 AccessLevel
+	if val, err := n.Attribute(context.Background(), ua.AttributeIDAccessLevel); err == nil {
+		if accessLevel, ok := val.Value().(uint8); ok {
+			return accessLevel&2 != 0 // 2 == CurrentWrite
+		}
+	}
+
+	return false
+}
+
 func browseNamespaceTree(c *opcua.Client, nodeID *ua.NodeID, visited map[string]bool, targetNS uint16, treeName string) *device.OpcTree {
 	key := nodeID.String()
 	if visited[key] {
@@ -98,6 +118,7 @@ func browseNamespaceTree(c *opcua.Client, nodeID *ua.NodeID, visited map[string]
 			if childNode != nil {
 				child.Type = childNode.Type().String()
 			}
+			isWritable(c, childNode)
 			child.Children = browseNamespaceTree(c, childNode, visited, targetNS, ref.DisplayName.Text).Children
 			root.Children = append(root.Children, child)
 		}

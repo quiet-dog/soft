@@ -73,3 +73,9 @@ func (c *deviceController) TestConnect(ctx context.Context, in *manage.DeviceTes
 	err = sManage.ManageDevice().TestConnect(ctx, &in.DeviceTestConnectReq)
 	return
 }
+
+func (c *deviceController) ImportModel(ctx context.Context, in *manage.DeviceImportModelReq) (out *manage.DeviceImportModelRes, err error) {
+	out = &manage.DeviceImportModelRes{}
+	err = sManage.ManageDevice().ImportModel(ctx, &in.DeviceImportModelReq)
+	return
+}

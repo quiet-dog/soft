@@ -1,18 +1,23 @@
 package res
 
-import "devinggo/manage/model/base"
+import (
+	"devinggo/manage/model/base"
+
+	"github.com/gogf/gf/v2/encoding/gjson"
+)
 
 type ServerTableRow struct {
 	base.BaseTable
-	Name     string `json:"name" description:"服务器名称"`    // 服务器名称
-	Ip       string `json:"ip" description:"IP地址"`       // IP地址
-	Port     string `json:"port" description:"端口"`       // 端口
-	Type     string `json:"type" description:"服务器类型"`    // 服务器类型
-	Username string `json:"username" description:"用户名"`  // 用户名
-	Password string `json:"password" description:"密码"`   // 密码
-	Interval int64  `json:"interval" description:"采集间隔"` // 采集间隔
-	Remark   string `json:"remark" description:"备注"`     // 备注
-	IsOnline bool   `json:"isOnline" description:"在线状态"` // 在线状态
+	Name     string      `json:"name" description:"服务器名称"`    // 服务器名称
+	Ip       string      `json:"ip" description:"IP地址"`       // IP地址
+	Port     string      `json:"port" description:"端口"`       // 端口
+	Type     string      `json:"type" description:"服务器类型"`    // 服务器类型
+	Extend   *gjson.Json `json:"extend" description:"扩展信息"`   // 扩展信息
+	Username string      `json:"username" description:"用户名"`  // 用户名
+	Password string      `json:"password" description:"密码"`   // 密码
+	Interval int64       `json:"interval" description:"采集间隔"` // 采集间隔
+	Remark   string      `json:"remark" description:"备注"`     // 备注
+	IsOnline bool        `json:"isOnline" description:"在线状态"` // 在线状态
 }
 
 type ServerType struct {

@@ -1,6 +1,10 @@
 package gateway
 
-import "time"
+import (
+	"time"
+
+	"github.com/gogf/gf/v2/encoding/gjson"
+)
 
 const (
 	SERVER_OPC                 = "opc"
@@ -15,6 +19,7 @@ type Config struct {
 	Host      string        `json:"host"`
 	Port      string        `json:"port"`
 	Type      string        `json:"type"`
+	Extend    *gjson.Json   `json:"extend"`
 	SubTime   time.Duration `json:"subTime"` // 订阅时间间隔
 }
 

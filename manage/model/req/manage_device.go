@@ -33,3 +33,8 @@ type DeviceTestConnectReq struct {
 	ServerId int64       `json:"serverId" v:"required|max-length:255" description:"服务id"` // 设备id
 	Extend   *gjson.Json `json:"extend" description:"扩展信息"`                               // 扩展信息
 }
+
+type DeviceImportModelReq struct {
+	Path     string `json:"path"`
+	DeviceId int64  `json:"deviceId" v:"required" description:"服务id"` // 设备id
+}

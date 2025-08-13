@@ -144,10 +144,15 @@ func (s *sServer) Save(ctx context.Context, in *req.ManageServerSave) (id int64,
 	if err != nil {
 		s.Delete(ctx, []int64{id})
 	}
+
+	if in.Type == gateway.SERVER_OPC {
+		_, err = manage.ManageOpc().InitOpc(ctx, id)
+	}
 	return
 }
 
 func (s *sServer) Delete(ctx context.Context, ids []int64) (err error) {
+	dao.ManageOpc.Ctx(ctx).Where(dao.ManageOpc.Columns().ServerId, ids).Delete()
 	_, err = s.Model(ctx).WhereIn("id", ids).Delete()
 	return
 }

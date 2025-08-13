@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gopcua/opcua"
 	"github.com/gopcua/opcua/monitor"
 	"github.com/gopcua/opcua/ua"
@@ -89,13 +90,24 @@ func (c *OpcClient) connectAndSubscribeOnce(channel chan Value) (err error) {
 	if err != nil {
 		return
 	}
+
 	opts := []opcua.Option{
-		opcua.SecurityPolicy(""),
-		opcua.SecurityModeString(""),
-		opcua.CertificateFile(""),
-		opcua.PrivateKeyFile(""),
-		opcua.AuthAnonymous(),
-		opcua.SecurityFromEndpoint(ep, ua.UserTokenTypeAnonymous),
+		opcua.SecurityPolicy(c.conf.Extend.Get("policy").String()),
+		opcua.SecurityModeString(c.conf.Extend.Get("mode").String()),
+		opcua.CertificateFile(c.conf.Extend.Get("certPath").String()),
+		opcua.PrivateKeyFile(c.conf.Extend.Get("keyPath").String()),
+		// opcua.AuthAnonymous(),
+		// opcua.SecurityFromEndpoint(ep, ua.UserTokenTypeAnonymous),
+	}
+
+	username := c.conf.Extend.Get("username").String()
+	password := c.conf.Extend.Get("password").String()
+
+	fmt.Println(c.conf.Extend.Get("policy").String(), c.conf.Extend.Get("mode").String(), c.conf.Extend.Get("certPath").String(), c.conf.Extend.Get("keyPath").String())
+	if username != "" && password != "" {
+		opts = append(opts, opcua.AuthUsername(username, password), opcua.SecurityFromEndpoint(ep, ua.UserTokenTypeUserName))
+	} else {
+		opts = append(opts, opcua.AuthAnonymous(), opcua.SecurityFromEndpoint(ep, ua.UserTokenTypeAnonymous))
 	}
 
 	client, err := opcua.NewClient(ep.EndpointURL, opts...)
@@ -235,4 +247,81 @@ func (c *OpcClient) AddNodes(nodes ...OpcNode) {
 			c.sub.AddNodes(c.ctx, v.NodeId)
 		}
 	}
+}
+
+func (c *OpcClient) Control(extends ...gjson.Json) (err error) {
+	for _, v := range extends {
+		if c.client != nil && c.isOnline {
+			controlType := v.Get("type").String()
+			if controlType == "methond" {
+				method := v.Get("methodId").String()
+				object := v.Get("objectId").String()
+				value := v.Get("value").Interface()
+				methodID := ua.NewStringNodeID(2, method)
+				objectID := ua.NewStringNodeID(2, object)
+
+				// 方法参数
+				inputArgs := []*ua.Variant{
+					ua.MustVariant(value), // 比如传true表示启动
+				}
+
+				resp, err := c.client.Call(c.ctx, &ua.CallMethodRequest{
+					ObjectID:       objectID,
+					MethodID:       methodID,
+					InputArguments: inputArgs,
+				})
+				if err != nil {
+					return fmt.Errorf("call method error: %s", err)
+				}
+
+				if resp.StatusCode != ua.StatusOK {
+					return fmt.Errorf("method call failed: %v", resp.StatusCode)
+				}
+			}
+			if controlType == "value" {
+				id := v.Get("nodeId").String()
+				if id == "" {
+					return fmt.Errorf("nodeId 为空")
+				}
+				nodeID, err := ua.ParseNodeID(id)
+				if err != nil {
+					return fmt.Errorf("节点ID错误")
+				}
+				value := v.Get("value").Interface()
+
+				fmt.Println("nodeId", nodeID.String())
+				// 假设写入值是布尔值true，代表启动
+				val, err := variantFromValueByNodeID(c.client, nodeID, value)
+				if err != nil {
+					fmt.Println(err.Error())
+					return fmt.Errorf("创建val失败" + err.Error())
+				}
+
+				// 写节点
+				req := &ua.WriteRequest{
+					NodesToWrite: []*ua.WriteValue{
+						{
+							NodeID:      nodeID,
+							AttributeID: ua.AttributeIDValue,
+							Value: &ua.DataValue{
+								Value: val,
+							},
+						},
+					},
+				}
+
+				resp, err := c.client.Write(c.ctx, req)
+				if err != nil {
+					// log.Fatalf("Write error: %s", err)
+					return fmt.Errorf("write error: %s", err)
+				}
+
+				if resp.Results[0] != ua.StatusOK {
+					return fmt.Errorf("write failed with status: %v", resp.Results[0])
+				}
+			}
+			return fmt.Errorf("未有控制命令")
+		}
+	}
+	return
 }
