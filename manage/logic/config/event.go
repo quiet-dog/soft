@@ -7,6 +7,7 @@ import (
 	"devinggo/manage/model/do"
 	"devinggo/manage/model/req"
 	"devinggo/manage/model/res"
+	"devinggo/manage/pkg/gateway"
 	"devinggo/manage/service/manage"
 	"devinggo/modules/system/logic/base"
 	"devinggo/modules/system/model"
@@ -60,22 +61,26 @@ func (s *sEvent) GetPageListForSearch(ctx context.Context, req *model.PageListRe
 }
 
 // 检查是否报警，创建事件
-func (s *sEvent) CheckEvent(ctx context.Context, sensorId int64, value common.TemplateEnv) (id int64, err error) {
+func (s *sEvent) CheckEvent(ctx context.Context, sensorId int64, value gateway.Value) (id int64, err error) {
 	thresholds, err := manage.ManageThresholdCache().Get(ctx, sensorId)
 	if err != nil {
 		fmt.Println("=============查询阈值失败===========")
 		return
 	}
 
-	var template string
-	template, err = manage.ManageSensorTemplateCache().Get(ctx, sensorId)
+	template, err := manage.ManageSensorTemplateCache().Get(ctx, sensorId)
 	if err != nil {
-		fmt.Println("=============查询模板失败===========")
+		fmt.Println("=============查询模板失败===========", err)
 		return
 	}
 
-	eV := value.Value.ToValueExprFloat64(template)
-	fmt.Println("=============数值转换成功===========", len(thresholds))
+	eV, err := template.ToExprValueFloat64(value.Value)
+	if err != nil {
+		fmt.Println("=============数值转换失败===========", err)
+		return
+	}
+
+	fmt.Println("=============数值转换成功===========", eV, template, value.Value)
 	// 是否有阈值设置
 	for _, v := range thresholds {
 		aAlarmTemplate := common.AlarmTemplate{

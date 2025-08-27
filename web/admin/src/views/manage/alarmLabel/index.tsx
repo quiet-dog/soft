@@ -36,6 +36,12 @@ export default function useAlarmLabelHook() {
             }
         },
         {
+            title: '通知类型', dataIndex: 'type', search: true, width: 180, editDisabled: true,
+            commonRules: [{ required: true, message: '公告类型必选' }], formType: 'radio',
+            dict: { name: 'backend_notice_type', props: { label: 'title', value: 'key' }, translation: true },
+            addDefaultValue: 1
+        },
+        {
             title: '标签颜色', dataIndex: 'color', formType: "color-picker", width: 150, addDisplay: true, editDisplay: true, commonRules: [
                 { required: true, message: '请选择标签颜色' },
             ]

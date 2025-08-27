@@ -134,6 +134,7 @@ func (s *sDeviceControl) Control(ctx context.Context, controlId int64) (err erro
 		return
 	}
 
+	info.Extend.Set("slaveId", deviceInfo.Extend.Get("slaveId").Uint8())
 	err = global.DeviceGateway.Control(deviceInfo.ServerId, *info.Extend)
 
 	return

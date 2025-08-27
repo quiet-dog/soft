@@ -71,7 +71,7 @@ export function useSensorHook() {
             title: '在线状态', dataIndex: 'isOnline', search: false, width: 150, addDisplay: false, editDisplay: false
         },
         {
-            title: '当前值', dataIndex: 'value.value.value.value', search: false, width: 150, addDisplay: false, editDisplay: false
+            title: '当前值', dataIndex: 'value', search: false, width: 150, addDisplay: false, editDisplay: false
         },
         {
             title: '值时间', dataIndex: 'value.createTime', search: false, width: 150, addDisplay: false, editDisplay: false

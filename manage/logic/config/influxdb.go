@@ -3,7 +3,6 @@ package config
 import (
 	"context"
 	"devinggo/manage/dao"
-	"devinggo/manage/model/common"
 	"devinggo/manage/model/req"
 	"devinggo/manage/model/res"
 	"devinggo/manage/pkg/gateway"
@@ -120,7 +119,7 @@ func (s *sInfluxdb) SearchTable(ctx context.Context, req *model.PageListReq, in 
 
 }
 
-func (s *sInfluxdb) Store(ctx context.Context, data common.TemplateEnv, sensorId int64) (err error) {
+func (s *sInfluxdb) Store(ctx context.Context, data gateway.Value, sensorId int64) (err error) {
 	c, err := s.Model(context.Background())
 	if err != nil {
 		fmt.Println("Failed to create InfluxDB client:", err)
@@ -138,7 +137,8 @@ func (s *sInfluxdb) Store(ctx context.Context, data common.TemplateEnv, sensorId
 	}
 	fmt.Println("====================", influxdbData.Template)
 
-	current := data.Value.ToValueInfluxdb()
+	current := influxdbData.Template.ToValueInfluxdbFloat64(data.Value)
+
 	// line := "1,sensor=2 value=23.5,current=45i"
 	line := fmt.Sprintf("t_%d,sensor=s_%d c_%d=%s,e_%d=%s %d",
 		influxdbData.DeviceId,
@@ -146,7 +146,7 @@ func (s *sInfluxdb) Store(ctx context.Context, data common.TemplateEnv, sensorId
 		influxdbData.SensorId,
 		current,
 		influxdbData.SensorId,
-		data.Value.ToValueExprInfluxdb(influxdbData.Template),
+		influxdbData.Template.ToExprValueInfluxdbFloat64(data.Value),
 		data.CreateTime.UnixNano(),
 	)
 	fmt.Println(line)
@@ -155,24 +155,16 @@ func (s *sInfluxdb) Store(ctx context.Context, data common.TemplateEnv, sensorId
 }
 
 func (s *sInfluxdb) StoreDataChannel(ctx context.Context, msg gateway.Msg) (err error) {
-
-	v := common.TemplateEnv{
-		Value: common.Value{
-			Value: msg.Value.Value,
-		},
-		Type:       msg.Value.Type,
-		CreateTime: msg.Value.CreateTime,
-	}
-
 	// 存储redis
-	manage.ManageSensorCache().Store(ctx, msg.Value.ID, v)
+	fmt.Println("=====================存储redis", msg.Value.Value)
+	manage.ManageSensorCache().Store(ctx, msg.Value.ID, msg.Value)
 
 	// 是否报警
 	fmt.Println("=====================是否报警")
-	manage.ManageEvent().CheckEvent(ctx, msg.Value.ID, v)
+	manage.ManageEvent().CheckEvent(ctx, msg.Value.ID, msg.Value)
 
 	// 存储到influxdb
-	err = s.Store(ctx, v, msg.Value.ID)
+	err = s.Store(ctx, msg.Value, msg.Value.ID)
 
 	return
 }

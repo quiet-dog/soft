@@ -3,15 +3,20 @@ import { onMounted, ref } from 'vue';
 import useServerHook from '.';
 import server from '@/api/manage/server';
 import OpcConfig from "@/package/server/opc/index.vue";
+import ModbusRtuConfig from "@/package/server/modbus/index.vue";
 
 const { crud, columns, crudRef,formType } = useServerHook()
 const serverTypes = ref([])
 const opcConfigRef = ref<InstanceType<typeof OpcConfig>>()
+const modbusRtuConfigRef = ref<InstanceType<typeof ModbusRtuConfig>>()
 function changeTypes(value) {
   formType.value = value
   crudRef.value.getFormData().type = value;
   if (value == "opc") {
     opcConfigRef.value?.open(crudRef.value.getFormData().extend)
+  }
+  if (value == "modbus_rtu") {
+    modbusRtuConfigRef.value?.open(crudRef.value.getFormData().extend)
   }
 }
 
@@ -49,6 +54,7 @@ onMounted(() => {
       </template>
     </ma-crud>
     <OpcConfig ref="opcConfigRef" @changeExtend="changeExtend" />
+    <ModbusRtuConfig ref="modbusRtuConfigRef" @changeExtend="changeExtend" />
   </div>
 </template>
 

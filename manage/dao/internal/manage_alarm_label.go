@@ -31,6 +31,7 @@ type ManageAlarmLabelColumns struct {
 	UpdatedAt string // 更新时间
 	DeletedAt string // 删除时间
 	Remark    string // 备注
+	NoticeId  string // 通知ID
 }
 
 // manageAlarmLabelColumns holds the columns for the table manage_alarm_label.
@@ -45,6 +46,7 @@ var manageAlarmLabelColumns = ManageAlarmLabelColumns{
 	UpdatedAt: "updated_at",
 	DeletedAt: "deleted_at",
 	Remark:    "remark",
+	NoticeId:  "notice_id",
 }
 
 // NewManageAlarmLabelDao creates and returns a new DAO object for table data access.

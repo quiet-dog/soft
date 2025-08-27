@@ -1,3 +1,3 @@
 export interface ExtendType {
-    start: string; quantity: number
+    start: number; quantity: number
 }

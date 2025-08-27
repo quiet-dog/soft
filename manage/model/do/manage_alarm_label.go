@@ -22,4 +22,5 @@ type ManageAlarmLabel struct {
 	UpdatedAt *gtime.Time // 更新时间
 	DeletedAt *gtime.Time // 删除时间
 	Remark    interface{} // 备注
+	NoticeId  interface{} // 通知ID
 }

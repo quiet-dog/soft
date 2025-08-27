@@ -31,16 +31,6 @@ export default function useServerHook() {
             ]
         },
         {
-            title: 'ip', dataIndex: 'ip', formType: 'input', search: true, width: 200, commonRules: [
-                { required: true, message: '请输入主机地址' },
-            ]
-        },
-        {
-            title: '端口', dataIndex: 'port', formType: 'input', search: true, width: 150, addDisplay: true, editDisplay: true, commonRules: [
-                { required: true, message: '请输入端口' },
-            ]
-        },
-        {
             title: '类型', dataIndex: 'type', formType: 'select', search: true, width: 150, addDisplay: true, editDisplay: true, commonRules: [
                 { required: true, message: '请选择服务器类型' },
             ],
@@ -50,9 +40,20 @@ export default function useServerHook() {
         },
         {
             title: '采集间隔', dataIndex: 'interval', formType: 'input-number', search: false, width: 150, addDisplay: true, editDisplay: true, commonRules: [
-                { required: true, message: '请设置采集间隔' },
+                { required: false, message: '请设置采集间隔' },
             ],
         },
+        {
+            title: 'ip', dataIndex: 'ip', formType: 'input', search: true, width: 200, commonRules: [
+                { required: false, message: '请输入主机地址' },
+            ]
+        },
+        {
+            title: '端口', dataIndex: 'port', formType: 'input', search: true, width: 150, addDisplay: true, editDisplay: true, commonRules: [
+                { required: false, message: '请输入端口' },
+            ]
+        },
+
         {
             title: '用户名', dataIndex: 'username', formType: 'input', width: 150, addDisplay: true, editDisplay: true, commonRules: [
             ]

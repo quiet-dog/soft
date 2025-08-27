@@ -17,6 +17,9 @@ import (
 	"devinggo/modules/system/pkg/orm"
 	"devinggo/modules/system/pkg/utils"
 	"errors"
+	"os"
+	"runtime"
+	"strings"
 	"time"
 
 	"github.com/gogf/gf/v2/database/gdb"
@@ -220,6 +223,32 @@ func (s *sServer) UpdateInfo(ctx context.Context, in *req.ManageServerUpdateInfo
 		Port:    in.Port,
 		SubTime: time.Duration(in.Interval * int64(time.Second)),
 	})
+
+	return
+}
+
+// 获取串口地址
+func (s *sServer) GetSerialPort(ctx context.Context) (ports []string, err error) {
+	// 如果是linux
+	if runtime.GOOS == "linux" {
+		// 获取485的串口设备
+		files, err := os.ReadDir("/dev")
+		if err != nil {
+			return ports, err
+		}
+		for _, file := range files {
+			name := file.Name()
+			if strings.HasPrefix(name, "ttyUSB") || strings.HasPrefix(name, "ttyS") || strings.HasPrefix(name, "ttyAMA") {
+				ports = append(ports, "/dev/"+file.Name())
+			}
+
+		}
+	}
+
+	if runtime.GOOS == "windows" {
+		// 获取com口
+
+	}
 
 	return
 }

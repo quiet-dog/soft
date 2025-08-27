@@ -71,7 +71,7 @@ func InitDeviceGateway() {
 				for _, sensor := range sensors {
 					if sensor.DeviceId == device.Id {
 						deviceJson.Set("deviceId", device.Id)
-						deviceJson.Set("slaveId", device.Extend.Get("slave").Uint16())
+						deviceJson.Set("slaveId", device.Extend.Get("slaveId").Uint16())
 						sensorMap[sensor.Id] = gateway.ModbusSensor{
 							StartAddress: sensor.Extend.Get("start").Uint16(),
 							Quantity:     sensor.Extend.Get("quantity").Uint16(),
@@ -81,6 +81,8 @@ func InitDeviceGateway() {
 					}
 				}
 				deviceJson.Set("sensors", sensorMap)
+				deviceJson.Set("slaveId", device.Extend.Get("slaveId").Uint16())
+				deviceJson.Set("deviceId", device.Id)
 				node = append(node, deviceJson)
 			}
 			c.AddNodes(node...)

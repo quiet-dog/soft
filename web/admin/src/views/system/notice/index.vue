@@ -39,7 +39,7 @@
       commonRules: [{ required: true, message: '公告标题必填' }],
     },
     { 
-      title: '公告类型', dataIndex: 'type', search: true, width: 180,editDisabled: true,
+      title: '公告类型', dataIndex: 'noticId', search: true, width: 180,editDisabled: true,
       commonRules: [{ required: true, message: '公告类型必选' }], formType: 'radio',
       dict: { name: 'backend_notice_type', props: { label: 'title', value: 'key' }, translation: true },
       addDefaultValue: 1

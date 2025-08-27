@@ -12,6 +12,7 @@ import (
 	"devinggo/manage/model/req"
 	"devinggo/manage/model/res"
 	"devinggo/manage/model/res/device"
+	"devinggo/manage/pkg/expr_template"
 	"devinggo/manage/pkg/gateway"
 	"devinggo/modules/system/model"
 
@@ -89,7 +90,7 @@ type (
 
 	IManageInfluxdb interface {
 		StoreDataChannel(ctx context.Context, msg gateway.Msg) (err error)
-		Store(ctx context.Context, data common.TemplateEnv, sensorId int64) (err error)
+		Store(ctx context.Context, data gateway.Value, sensorId int64) (err error)
 		SearchSensorDataList(ctx context.Context, req *model.PageListReq, in *req.ManageInfluxdbSearch) (out *res.SensorDataList, err error)
 		SearchSensorEchart(ctx context.Context, re *model.PageListReq, in *req.ManageInfluxdbOneSensorSearch) (out *res.SensorDataList, err error)
 	}
@@ -100,8 +101,8 @@ type (
 
 	IManageSensorCache interface {
 		Model(ctx context.Context) *gredis.Redis
-		Store(ctx context.Context, key int64, value common.TemplateEnv) (v *gvar.Var, err error)
-		Get(ctx context.Context, key int64) (t common.TemplateEnv, err error)
+		Store(ctx context.Context, key int64, value gateway.Value) (v *gvar.Var, err error)
+		Get(ctx context.Context, key int64) (t gateway.Value, err error)
 		Delete(ctx context.Context, key int64) (n int64, err error)
 		StoreDevice(ctx context.Context, sensorId int64) (v *gvar.Var, err error)
 		GetDevice(ctx context.Context, deviceId int64) (data []int64, err error)
@@ -109,8 +110,8 @@ type (
 	}
 
 	IManageSensorTemplateCache interface {
-		Get(ctx context.Context, sensorId int64) (template string, err error)
-		Store(ctx context.Context, sensorId int64) (template string, err error)
+		Get(ctx context.Context, sensorId int64) (template expr_template.ExprTemplate, err error)
+		Store(ctx context.Context, sensorId int64) (template expr_template.ExprTemplate, err error)
 	}
 
 	IManageThreshold interface {
@@ -130,7 +131,7 @@ type (
 
 	IManageEvent interface {
 		Save(ctx context.Context, in *req.ManageEventReq) (id int64, err error)
-		CheckEvent(ctx context.Context, sensorId int64, value common.TemplateEnv) (id int64, err error)
+		CheckEvent(ctx context.Context, sensorId int64, value gateway.Value) (id int64, err error)
 		GetPageListForSearch(ctx context.Context, req *model.PageListReq, in *req.ManageEventSearch) (res []*res.EventTableRow, total int, err error)
 	}
 

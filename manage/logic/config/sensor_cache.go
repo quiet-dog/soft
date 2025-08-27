@@ -2,7 +2,7 @@ package config
 
 import (
 	"context"
-	"devinggo/manage/model/common"
+	"devinggo/manage/pkg/gateway"
 	"devinggo/manage/service/manage"
 	"devinggo/modules/system/logic/base"
 	"devinggo/modules/system/pkg/cache"
@@ -17,6 +17,8 @@ import (
 const sensorDataGroup = "sensorData"
 const deviceDataGroup = "deviceData"
 const duration = 10 * time.Second
+
+var exSensorCache = int64(duration.Seconds()) // time.Duration -> 秒 -> int64
 
 type sSensorCache struct {
 	base.BaseService
@@ -36,19 +38,21 @@ func (s *sSensorCache) Model(ctx context.Context) *gredis.Redis {
 	return cache.GetRedisClient()
 }
 
-func (s *sSensorCache) Store(ctx context.Context, key int64, value common.TemplateEnv) (v *gvar.Var, err error) {
-	ex := int64(duration.Seconds()) // time.Duration -> 秒 -> int64
+func (s *sSensorCache) Store(ctx context.Context, key int64, value gateway.Value) (v *gvar.Var, err error) {
 	v, err = s.Model(ctx).Set(ctx, fmt.Sprintf("%s-%d", sensorDataGroup, key), value, gredis.SetOption{
 		TTLOption: gredis.TTLOption{
-			EX: &ex,
+			EX: &exSensorCache,
 		},
 	})
+	if err != nil {
+		fmt.Println("=============存储传感器数据失败===========", err)
+	}
 
 	s.StoreDevice(ctx, key)
 	return
 }
 
-func (s *sSensorCache) Get(ctx context.Context, key int64) (t common.TemplateEnv, err error) {
+func (s *sSensorCache) Get(ctx context.Context, key int64) (t gateway.Value, err error) {
 	v, err := s.Model(ctx).Get(ctx, fmt.Sprintf("%s-%d", sensorDataGroup, key))
 	if err != nil {
 		return
@@ -57,7 +61,7 @@ func (s *sSensorCache) Get(ctx context.Context, key int64) (t common.TemplateEnv
 	if v.IsNil() || v.IsEmpty() {
 		return t, fmt.Errorf("为空")
 	}
-	t = common.TemplateEnv{}
+	t = gateway.Value{}
 	err = v.Scan(&t)
 	return
 }
@@ -97,10 +101,10 @@ func (s *sSensorCache) StoreDevice(ctx context.Context, sensorId int64) (v *gvar
 		}
 	}
 
-	ex := int64(duration.Seconds()) // time.Duration -> 秒 -> int64
+	// ex := int64(duration.Seconds()) // time.Duration -> 秒 -> int64
 	v, err = s.Model(ctx).Set(ctx, key, data, gredis.SetOption{
 		TTLOption: gredis.TTLOption{
-			EX: &ex,
+			EX: &exSensorCache,
 		},
 	})
 

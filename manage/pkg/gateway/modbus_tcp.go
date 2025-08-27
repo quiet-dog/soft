@@ -6,13 +6,14 @@ import (
 	"maps"
 	"time"
 
-	"github.com/goburrow/modbus"
 	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/os/gcron"
+	"github.com/simonvetter/modbus"
 )
 
+// ModbusTcpClient 结构体，适配 simonvetter/modbus 库
 type ModbusTcpClient struct {
-	client   *modbus.TCPClientHandler
+	client   *modbus.ModbusClient
 	conf     Config
 	isOnline bool
 	ctx      context.Context
@@ -22,6 +23,7 @@ type ModbusTcpClient struct {
 	timer    *gcron.Entry
 }
 
+// ModbusSensor 定义传感器配置
 type ModbusSensor struct {
 	StartAddress uint16 `json:"startAddress"`
 	Quantity     uint16 `json:"quantity"`
@@ -29,120 +31,140 @@ type ModbusSensor struct {
 	ReadType     int64  `json:"readType"`
 }
 
+// ModbusDevice 定义设备配置
 type ModbusDevice struct {
 	SlaveId  uint16
 	DeviceId int64
 	Sensors  map[int64]ModbusSensor
 }
 
+// TestPing 测试连接
 func (m *ModbusTcpClient) TestPing() (err error) {
-	handler := modbus.NewTCPClientHandler(fmt.Sprintf("%s:%s", m.conf.Host, m.conf.Port))
-	if err = handler.Connect(); err != nil {
-		return
+	client, err := modbus.NewClient(&modbus.ClientConfiguration{
+		URL:     fmt.Sprintf("tcp://%s:%s", m.conf.Host, m.conf.Port),
+		Timeout: 2 * time.Second,
+	})
+	if err != nil {
+		return fmt.Errorf("创建客户端失败: %v", err)
 	}
 
-	defer handler.Close()
-	return
+	err = client.Open()
+	if err != nil {
+		return fmt.Errorf("连接失败: %v", err)
+	}
+	defer client.Close()
+	return nil
 }
 
+// durationToCron 将时间间隔转换为 cron 表达式
 func durationToCron(duration time.Duration) string {
 	seconds := int(duration.Seconds())
 
 	if seconds == 0 {
-		return fmt.Sprintln("*/5 * * * * *")
+		return "*/5 * * * * *"
 	}
 
-	// 如果秒数小于 60，意味着每隔多少秒执行一次
 	if seconds < 60 {
-		return fmt.Sprintf("*/%d * * * * *", seconds) // 每 `seconds` 秒执行一次
+		return fmt.Sprintf("*/%d * * * * *", seconds)
 	}
 
-	// 如果大于等于 60 秒，可以进一步转换成分钟、小时等
 	minutes := seconds / 60
 	if minutes < 60 {
-		return fmt.Sprintf("%d */%d * * * *", seconds%60, minutes) // 每 `minutes` 分钟执行一次
+		return fmt.Sprintf("%d */%d * * * *", seconds%60, minutes)
 	}
 
 	hours := minutes / 60
 	if hours < 24 {
-		return fmt.Sprintf("* %d * * *", hours) // 每 `hours` 小时执行一次
+		return fmt.Sprintf("* %d */%d * *", minutes%60, hours)
 	}
 
 	days := hours / 24
-	return fmt.Sprintf("* %d * * *", days) // 每 `days` 天执行一次
+	return fmt.Sprintf("* * %d * *", days)
 }
 
-// 初始化
+// connectAndSubscribeOnce 初始化并订阅数据
 func (c *ModbusTcpClient) connectAndSubscribeOnce(channel chan Value) (err error) {
 	c.channel = channel
 	ctx, cancel := context.WithCancel(context.Background())
 	c.ctx = ctx
 	c.cancel = cancel
-	url := fmt.Sprintf("%s:%s", c.conf.Host, c.conf.Port)
 
-	g := gcron.New()
-
-	handler := modbus.NewTCPClientHandler(url)
-	handler.Timeout = 2 * time.Second
-	if err = handler.Connect(); err != nil {
-		return
+	// 创建 Modbus 客户端
+	client, err := modbus.NewClient(&modbus.ClientConfiguration{
+		URL:     fmt.Sprintf("tcp://%s:%s", c.conf.Host, c.conf.Port),
+		Timeout: 3 * time.Second,
+	})
+	if err != nil {
+		return fmt.Errorf("创建客户端失败: %v", err)
 	}
-	c.client = handler
 
+	// 打开连接
+	if err = client.Open(); err != nil {
+		return fmt.Errorf("连接失败: %v", err)
+	}
+	c.client = client
+
+	// 确保在函数退出时清理资源
 	defer func() {
 		c.isOnline = false
-		handler.Close()
+		client.Close()
+		if c.timer != nil {
+			c.timer.Stop()
+		}
 	}()
 
 	c.isOnline = true
-	//  durationToCron(c.conf.SubTime)
+
+	// 创建定时任务
+	g := gcron.New()
 	c.timer, err = g.Add(ctx, durationToCron(c.conf.SubTime), func(ctx context.Context) {
-		c.client.Close()
-		if err := c.client.Connect(); err != nil {
 
-			fmt.Println("===========================测试111")
-
-			c.isOnline = false
-			return
-		}
 		for _, device := range c.nodes {
+			// 设置从站 ID
+			c.client.SetUnitId(uint8(device.SlaveId))
+
 			for _, sensor := range device.Sensors {
-				client := modbus.NewClient(handler)
-				var rs []byte
-				// 读寄存器
+				// 验证寄存器数量
+				// if sensor.Quantity < 2 || sensor.Quantity%2 != 0 {
+				// 	fmt.Printf("无效的寄存器数量: %d (SensorID: %d)\n", sensor.Quantity, sensor.SensorId)
+				// 	continue
+				// }
+
+				// 选择寄存器类型
+				var regType modbus.RegType
+
 				if sensor.ReadType == 1 {
-					rs, err = client.ReadHoldingRegisters(sensor.StartAddress, sensor.Quantity)
-					if err != nil {
-						continue
-					}
+					regType = modbus.HOLDING_REGISTER
+				} else if sensor.ReadType == 2 {
+					regType = modbus.INPUT_REGISTER
+				} else {
+					fmt.Printf("无效的 ReadType: %d (SensorID: %d)\n", sensor.ReadType, sensor.SensorId)
+					continue
 				}
-
-				// 读写寄存器
-				if sensor.ReadType == 2 {
-					rs, err = client.ReadInputRegisters(sensor.StartAddress, sensor.Quantity)
-					if err != nil {
-						continue
-					}
-				}
-
-				if len(rs) < 2 || len(rs)%2 != 0 {
+				// 读取寄存器
+				rs, err := c.client.ReadRegisters(sensor.StartAddress, sensor.Quantity, regType)
+				if err != nil {
+					fmt.Printf("读取寄存器失败 (SlaveId: %d) (SensorID: %d) (StartAddress: %d) (Quantity: %d) (RegType: %d) (URL: %s) (ReadType: %d): %v\n", device.SlaveId, sensor.SensorId, sensor.StartAddress, sensor.Quantity, regType, fmt.Sprintf("tcp://%s:%s", c.conf.Host, c.conf.Port), sensor.ReadType, err)
 					continue
 				}
 
-				registerValues := []uint16{}
-
-				for i := 0; i < len(rs)-1; i += 2 {
-					registerValues = append(registerValues, uint16(rs[0])<<8|uint16(rs[1]))
+				fmt.Printf("读取的寄存器数量: %d (SensorID: %d)\n", len(rs), sensor.SensorId)
+				if len(rs) != int(sensor.Quantity) {
+					fmt.Printf("读取的寄存器数量不匹配: 期望 %d, 实际 %d (SensorID: %d)\n",
+						sensor.Quantity, len(rs), sensor.SensorId)
+					continue
 				}
 
+				// 构造消息
 				msg := Value{
 					ID:         sensor.SensorId,
-					Value:      registerValues,
+					Value:      rs,
 					CreateTime: time.Now(),
 					Type:       "ArrayUnit16",
 					DeviceId:   device.DeviceId,
 				}
 
+				// 发送消息到通道
 				select {
 				case <-c.ctx.Done():
 					c.isOnline = false
@@ -150,25 +172,23 @@ func (c *ModbusTcpClient) connectAndSubscribeOnce(channel chan Value) (err error
 				case c.channel <- msg:
 					c.isOnline = true
 				default:
+					fmt.Println("通道已满，丢弃消息")
 					c.isOnline = false
 					return
 				}
-
 			}
 		}
 	})
 	if err != nil {
-		return
+		return fmt.Errorf("添加定时任务失败: %v", err)
 	}
 
 	<-c.ctx.Done()
 	c.isOnline = false
-	c.client.Close()
-	c.timer.Stop()
-
-	return
+	return nil
 }
 
+// AddNodes 添加设备节点
 func (c *ModbusTcpClient) AddNodes(devices ...ModbusDevice) {
 	for _, v := range devices {
 		var isDeviceExit bool
@@ -184,34 +204,46 @@ func (c *ModbusTcpClient) AddNodes(devices ...ModbusDevice) {
 	}
 }
 
+// Control 写入寄存器
 func (c *ModbusTcpClient) Control(commands ...gjson.Json) (err error) {
 	for _, command := range commands {
 		startAddr := command.Get("startAddr").Uint16()
 		values := command.Get("value").Int64s()
-		handler := modbus.NewTCPClientHandler(fmt.Sprintf("%s:%s", c.conf.Host, c.conf.Port))
-		handler.Timeout = 3 * time.Second
-		handler.SlaveId = c.client.SlaveId
-		err = handler.Connect()
-		if err != nil {
-			return
-		}
-		defer handler.Close()
+		slaveId := command.Get("slaveId").Uint8()
 
-		// 把 values 转成字节切片，Modbus寄存器每个2字节
-		byteValues := make([]byte, 0, len(values)*2)
-		for _, v := range values {
-			val := uint16(v) // 转uint16，注意超出范围需处理
-			high := byte(val >> 8)
-			low := byte(val & 0xFF)
-			byteValues = append(byteValues, high, low)
+		// 创建新客户端（与原始代码保持一致）
+		client, err := modbus.NewClient(&modbus.ClientConfiguration{
+			URL:     fmt.Sprintf("tcp://%s:%s", c.conf.Host, c.conf.Port),
+			Timeout: 3 * time.Second,
+		})
+		if err != nil {
+			return fmt.Errorf("创建客户端失败: %v", err)
 		}
 
-		client := modbus.NewClient(handler)
-		_, err = client.WriteMultipleRegisters(startAddr, uint16(len(values)), byteValues)
+		// 设置从站 ID（与 c.client 保持一致）
+		client.SetUnitId(slaveId)
+
+		// 打开连接
+		if err = client.Open(); err != nil {
+			return fmt.Errorf("连接失败: %v", err)
+		}
+		defer client.Close()
+
+		// 将 values 转换为 uint16 切片
+		registerValues := make([]uint16, len(values))
+		for i, v := range values {
+			if v < 0 || v > 0xFFFF {
+				return fmt.Errorf("值超出 uint16 范围: %d", v)
+			}
+			registerValues[i] = uint16(v)
+		}
+
+		// 写入多个寄存器
+		err = client.WriteRegisters(startAddr, registerValues)
 		if err != nil {
-			return
+			return fmt.Errorf("写入寄存器失败: %v", err)
 		}
 	}
 
-	return
+	return nil
 }

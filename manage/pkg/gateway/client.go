@@ -39,6 +39,22 @@ func NewClinet(cfg Config) (client Client, err error) {
 		go client.StoreModebusTcpServer()
 	}
 
+	if cfg.Type == SERVER_MODBUS_RTU_OVER_TCP {
+		rtuClient := ModbusRtuOverTcpClient{
+			conf: cfg,
+		}
+		client.client = &rtuClient
+		go client.StoreModebusRtuOverTcpServer()
+	}
+
+	if cfg.Type == SERVER_MODBUS_RTU {
+		rtuClient := ModbusRtuClient{
+			conf: cfg,
+		}
+		client.client = &rtuClient
+		go client.StoreModebusRtuServer()
+	}
+
 	// 等待服务器连接完成
 	time.Sleep(2 * time.Second)
 	return
@@ -57,6 +73,7 @@ func (c *Client) StoreOpcServer() {
 	}
 }
 
+// modbus tcp 存储并且开始长连接服务
 func (c *Client) StoreModebusTcpServer() {
 	for {
 		err := c.client.(*ModbusTcpClient).connectAndSubscribeOnce(c.channel)
@@ -69,6 +86,28 @@ func (c *Client) StoreModebusTcpServer() {
 	}
 }
 
+// modbus rtu over tcp 存储并且开始长连接服务
+func (c *Client) StoreModebusRtuOverTcpServer() {
+	for {
+		err := c.client.(*ModbusRtuOverTcpClient).connectAndSubscribeOnce(c.channel)
+		if err != nil {
+			log.Printf("[ERROR] %v", err)
+		}
+
+		log.Println("[WARN] modbus 连接中断，5 秒后重试...")
+		time.Sleep(5 * time.Second)
+	}
+}
+
+// modbus rtu 存储并且开始长连接服务
+func (c *Client) StoreModebusRtuServer() {
+	for {
+		err := c.client.(*ModbusRtuClient).connectAndSubscribeOnce(c.channel)
+		if err != nil {
+			log.Printf("[ERROR] %v", err)
+		}
+	}
+}
 func (c *Client) AddNodes(nodes ...*gjson.Json) {
 	// opc 设备的节点添加
 	if v, ok := c.client.(*OpcClient); ok {
@@ -101,12 +140,63 @@ func (c *Client) AddNodes(nodes ...*gjson.Json) {
 				}
 			}
 			device.Sensors = sensors
+			device.SlaveId = node.Get("slaveId").Uint16()
+			device.DeviceId = node.Get("deviceId").Int64()
 			n = append(n, device)
 		}
 
 		v.AddNodes(n...)
 	}
 
+	if v, ok := c.client.(*ModbusRtuOverTcpClient); ok {
+		n := []ModbusDevice{}
+		for _, node := range nodes {
+			device := ModbusDevice{}
+			sensors := make(map[int64]ModbusSensor)
+			if node.Get("sensors").IsMap() {
+				for k, value := range node.Get("sensors").Map() {
+					if kInt, err := strconv.Atoi(k); err != nil {
+						continue
+					} else {
+						if sV, ok := value.(ModbusSensor); ok {
+							sensors[int64(kInt)] = sV
+						}
+					}
+				}
+			}
+			device.Sensors = sensors
+			device.SlaveId = node.Get("slaveId").Uint16()
+			device.DeviceId = node.Get("deviceId").Int64()
+			n = append(n, device)
+		}
+
+		v.AddNodes(n...)
+	}
+
+	if v, ok := c.client.(*ModbusRtuClient); ok {
+		n := []ModbusDevice{}
+		for _, node := range nodes {
+			device := ModbusDevice{}
+			sensors := make(map[int64]ModbusSensor)
+			if node.Get("sensors").IsMap() {
+				for k, value := range node.Get("sensors").Map() {
+					if kInt, err := strconv.Atoi(k); err != nil {
+						continue
+					} else {
+						if sV, ok := value.(ModbusSensor); ok {
+							sensors[int64(kInt)] = sV
+						}
+					}
+				}
+			}
+			device.Sensors = sensors
+			device.SlaveId = node.Get("slaveId").Uint16()
+			device.DeviceId = node.Get("deviceId").Int64()
+			n = append(n, device)
+		}
+
+		v.AddNodes(n...)
+	}
 }
 
 func (c *Client) IsOnline() bool {
@@ -114,6 +204,12 @@ func (c *Client) IsOnline() bool {
 		return v.isOnline
 	}
 	if v, ok := c.client.(*ModbusTcpClient); ok {
+		return v.isOnline
+	}
+	if v, ok := c.client.(*ModbusRtuOverTcpClient); ok {
+		return v.isOnline
+	}
+	if v, ok := c.client.(*ModbusRtuClient); ok {
 		return v.isOnline
 	}
 	return false
@@ -126,6 +222,14 @@ func (c *Client) Control(commands ...gjson.Json) (err error) {
 	}
 
 	if v, ok := c.client.(*OpcClient); ok {
+		return v.Control(commands...)
+	}
+
+	if v, ok := c.client.(*ModbusRtuOverTcpClient); ok {
+		return v.Control(commands...)
+	}
+
+	if v, ok := c.client.(*ModbusRtuClient); ok {
 		return v.Control(commands...)
 	}
 
@@ -149,6 +253,18 @@ func (c *Client) Close() {
 	}
 
 	if v, ok := c.client.(*ModbusTcpClient); ok {
+		if c.client != nil && v.cancel != nil {
+			v.cancel()
+		}
+	}
+
+	if v, ok := c.client.(*ModbusRtuOverTcpClient); ok {
+		if c.client != nil && v.cancel != nil {
+			v.cancel()
+		}
+	}
+
+	if v, ok := c.client.(*ModbusRtuClient); ok {
 		if c.client != nil && v.cancel != nil {
 			v.cancel()
 		}

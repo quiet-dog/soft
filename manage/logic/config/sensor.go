@@ -7,6 +7,7 @@ import (
 	"devinggo/manage/model/do"
 	"devinggo/manage/model/req"
 	"devinggo/manage/model/res"
+	"devinggo/manage/pkg/expr_template"
 	"devinggo/manage/pkg/gateway"
 	"devinggo/manage/pkg/hook"
 	"devinggo/manage/service/manage"
@@ -17,7 +18,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/expr-lang/expr"
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
@@ -45,7 +45,12 @@ func (s *sensorHook) AfterSelectHook(ctx context.Context, in *gdb.HookSelectInpu
 			if err != nil {
 				item["is_online"] = g.NewVar(false)
 			}
-			item["value"] = g.NewVar(t)
+			template, err := manage.ManageSensorTemplateCache().Get(ctx, item[dao.ManageSensor.Columns().Id].Int64())
+			if err == nil {
+				v, _ := template.ToExprValueFloat64(t.Value)
+				item["value"] = g.NewVar(v)
+			}
+
 		}
 
 		if !item[dao.ManageSensor.Columns().DeviceId].IsEmpty() {
@@ -147,13 +152,9 @@ func (s *sSensor) TranslateData(ctx context.Context, in *req.ManageSensorTransla
 	if in.Template == "" {
 		return in.Env.Value, nil
 	}
-	program, err := expr.Compile(in.Template, expr.Env(in.Env.PrepareExprEnv()))
-	if err != nil {
-		return
-	}
-	result, err := expr.Run(program, in.Env.PrepareExprEnv())
-	// s.ReadInfluxdbFormat(ctx, 48)
-	out.Value = result
+	template := expr_template.ExprTemplate(in.Template)
+	out.Value, err = template.ToExprValueFloat64(in.Env.Value)
+
 	return
 }
 
@@ -167,9 +168,7 @@ func (s *sSensor) ReadInfluxdbFormat(ctx context.Context, sensorId int64) (out *
 	out.DeviceId = r.DeviceId
 	out.SensorId = r.Id
 	out.SensorTypeId = r.SensorTypeId
-	out.Template = r.Template
-	fmt.Println(out.Template, sensorId)
-	// os.Exit(0)
+	out.Template = expr_template.ExprTemplate(r.Template)
 	return
 }
 

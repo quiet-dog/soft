@@ -183,15 +183,15 @@ func (s *sDevice) handleDeviceConnect(serverInfo *res.ServerInfo, extend *gjson.
 	switch serverInfo.Type {
 	case gateway.SERVER_MODBUS_TCP:
 		{
-			err = s.handleModbusTcp(serverInfo, extend.Get("slave").Int())
+			err = s.handleModbusTcp(serverInfo, extend.Get("slaveId").Int())
 		}
 	case gateway.SERVER_MODBUS_RTU:
 		{
-			err = s.handleModbusRtu(serverInfo, extend.Get("slave").Int())
+			err = s.handleModbusRtu(serverInfo, extend.Get("slaveId").Int())
 		}
 	case gateway.SERVER_MODBUS_RTU_OVER_TCP:
 		{
-			err = s.handleModbusRtuOverTcp(serverInfo, extend.Get("slave").Int())
+			err = s.handleModbusRtuOverTcp(serverInfo, extend.Get("slaveId").Int())
 		}
 	}
 	return

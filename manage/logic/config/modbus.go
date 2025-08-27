@@ -40,7 +40,7 @@ func (s *sModbus) TestDataByDeviceId(ctx context.Context, deviceId int64, in *re
 		return
 	}
 
-	in.Extend.Set("slave", deviceInfo.Extend.Get("slave").Int())
+	in.Extend.Set("slaveId", deviceInfo.Extend.Get("slaveId").Int())
 
 	rs, err = s.handleSensorConnect(serverInfo, in.Extend)
 
@@ -56,15 +56,15 @@ func (s *sModbus) handleSensorConnect(serverInfo *res.ServerInfo, extend *gjson.
 	switch serverInfo.Type {
 	case gateway.SERVER_MODBUS_TCP:
 		{
-			rs, err = s.handleModbusTcpSensor(serverInfo, extend.Get("slave").Int(), extend.Get("start").Int64(), extend.Get("quantity").Int64())
+			rs, err = s.handleModbusTcpSensor(serverInfo, extend.Get("slaveId").Int(), extend.Get("start").Int64(), extend.Get("quantity").Int64())
 		}
 	case gateway.SERVER_MODBUS_RTU:
 		{
-			err = s.handleModbusRtu(serverInfo, extend.Get("slave").Int())
+			err = s.handleModbusRtu(serverInfo, extend.Get("slaveId").Int())
 		}
 	case gateway.SERVER_MODBUS_RTU_OVER_TCP:
 		{
-			err = s.handleModbusRtuOverTcp(serverInfo, extend.Get("slave").Int())
+			err = s.handleModbusRtuOverTcp(serverInfo, extend.Get("slaveId").Int())
 		}
 	}
 	return

@@ -20,3 +20,8 @@ const TYPE_ANNOUNCE = "announcement"
  * 消息类型：私信
  */
 const TYPE_PRIVATE_MESSAGE = "private_message"
+
+/**
+ * 消息类型：传感器报警
+ */
+const TYPE_SENSOR_ALARM_MESSAGE = "manage_sensor_alarm_notic"

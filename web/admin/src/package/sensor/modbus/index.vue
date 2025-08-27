@@ -16,9 +16,9 @@ const emit = defineEmits<{
 }>();
 
 const extend = ref({
-    start: "",
+    start: 0,
     quantity: 0,
-    readType:0
+    readType: 0
 })
 
 
@@ -36,7 +36,7 @@ function onClose() {
 }
 
 function changeSlave(val) {
-    extend.value.start = "0x" + val
+    extend.value.start = val
 }
 
 function handleOpen() {
@@ -44,13 +44,13 @@ function handleOpen() {
         extend.value = JSON.parse(JSON.stringify(sExtend))
     } else {
         extend.value.quantity = 0
-        extend.value.start = ""
+        extend.value.start = 0
         extend.value.readType = 1
     }
 
 }
 
-function changeSelect(value){
+function changeSelect(value) {
     extend.value.readType = Number(value)
 }
 
@@ -60,7 +60,7 @@ function changeSelect(value){
     <AModal @open="handleOpen" @close="onClose" v-model:visible="visible" title="modbus节点配置" @ok="handleOk"
         @cancel="handleCancel">
         <AForm :model="extend">
-         <ARow>
+            <ARow>
                 <ACol>
                     <AFormItem label="功能类型">
                         <ASelect default-value="1" @change="changeSelect">
@@ -73,11 +73,7 @@ function changeSelect(value){
             <ARow>
                 <ACol>
                     <AFormItem label="起始地址">
-                        <AInput @change="changeSlave" placeholder="请输入十六进制地址">
-                            <template #prepend>
-                                0x
-                            </template>
-                        </AInput>
+                        <AInputNumber @change="changeSlave" placeholder="请输入开始地址" />
                     </AFormItem>
                 </ACol>
             </ARow>

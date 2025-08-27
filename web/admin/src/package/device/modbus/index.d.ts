@@ -1,3 +1,3 @@
 export interface ExtendType {
-    slave: string, duration: number
+    slaveId: string, duration: number
 }

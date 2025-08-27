@@ -16,14 +16,14 @@ const { serverId = 0,sExtend } = defineProps<{
 }>()
 
 const extend = ref({
-    slave: "",
+    slaveId: "",
     duration: 5
 })
 
 const testBtnLoading = ref(false)
 
 function changeSlave(val) {
-    extend.value.slave = "0x" + val
+    extend.value.slaveId = "0x" + val
 }
 
 const emit = defineEmits<{
@@ -58,7 +58,7 @@ function handleOpen(){
         extend.value = JSON.parse(JSON.stringify(sExtend))
     } else {
         extend.value.duration = 5
-        extend.value.slave = ""
+        extend.value.slaveId = ""
     }
 }
 </script>

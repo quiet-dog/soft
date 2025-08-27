@@ -2,7 +2,7 @@ package config
 
 import (
 	"context"
-	"devinggo/manage/model/common"
+	"devinggo/manage/pkg/expr_template"
 	"devinggo/manage/service/manage"
 	"devinggo/modules/system/logic/base"
 	"devinggo/modules/system/pkg/cache"
@@ -14,6 +14,8 @@ import (
 
 const sensorTemplateCacheKey = "sensor-template"
 const sensorTemplateCacheDuration = 10 * time.Second
+
+var exSensorTemplate = int64(sensorTemplateCacheDuration.Seconds()) // time.Duration -> 秒 -> int6
 
 type sSensorTemplateCache struct {
 	base.BaseService
@@ -30,7 +32,8 @@ func NewManageSensorTemplateCache() *sSensorTemplateCache {
 func (s *sSensorTemplateCache) Model(ctx context.Context) *gredis.Redis {
 	return cache.GetRedisClient()
 }
-func (s *sSensorTemplateCache) Get(ctx context.Context, sensorId int64) (template string, err error) {
+
+func (s *sSensorTemplateCache) Get(ctx context.Context, sensorId int64) (template expr_template.ExprTemplate, err error) {
 	key := fmt.Sprintf("%s-%d", sensorTemplateCacheKey, sensorId)
 
 	v, err := s.Model(ctx).Get(ctx, key)
@@ -39,30 +42,26 @@ func (s *sSensorTemplateCache) Get(ctx context.Context, sensorId int64) (templat
 	}
 
 	if v.IsEmpty() || v.IsNil() {
-		template, err = s.Store(ctx, sensorId)
 		return
 	}
 
-	template = v.String()
-	aTemplate := common.AlarmTemplate{}
-	aTemplate.Template = template
+	template = expr_template.ExprTemplate(v.String())
 	return
 }
 
-func (s *sSensorTemplateCache) Store(ctx context.Context, sensorId int64) (template string, err error) {
+func (s *sSensorTemplateCache) Store(ctx context.Context, sensorId int64) (template expr_template.ExprTemplate, err error) {
 	key := fmt.Sprintf("%s-%d", sensorTemplateCacheKey, sensorId)
-	ex := int64(sensorTemplateCacheDuration.Seconds()) // time.Duration -> 秒 -> int6
 
 	info, err := manage.ManageSensor().Read(ctx, sensorId)
 	if err != nil {
 		return
 	}
 
-	template = info.Template
+	template = expr_template.ExprTemplate(info.Template)
 
-	_, err = s.Model(ctx).Set(ctx, key, template, gredis.SetOption{
+	_, err = s.Model(ctx).Set(ctx, key, string(template), gredis.SetOption{
 		TTLOption: gredis.TTLOption{
-			EX: &ex,
+			EX: &exSensorTemplate,
 		},
 	})
 

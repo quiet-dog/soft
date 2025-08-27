@@ -1,18 +1,18 @@
-from pymodbus.server import StartTcpServer
-from pymodbus.server import ModbusTcpServer
+import asyncio
+import threading, random, time
+from pymodbus.server.async_io import StartTcpServer
 from pymodbus.datastore import ModbusSparseDataBlock, ModbusServerContext
 from pymodbus.transaction import ModbusRtuFramer
-import threading, random, time
 
 # 自定义数据块
 class CustomDataBlock(ModbusSparseDataBlock):
     pass
 
-# 初始化寄存器
-block = CustomDataBlock({0: 25, 1: 60})  # 0=温度, 1=湿度
+# 初始化寄存器: 0=温度, 1=湿度
+block = CustomDataBlock({0: 25, 1: 60})
 context = ModbusServerContext({1: block})
 
-# 更新寄存器线程
+# 定时更新寄存器线程
 def update_values():
     while True:
         temp = random.randint(20, 30)
@@ -23,7 +23,10 @@ def update_values():
 
 threading.Thread(target=update_values, daemon=True).start()
 
-# 启动 RTU over TCP 服务器
+# AsyncIO 启动 RTU over TCP 服务器
+async def run_server():
+    await StartTcpServer(context, framer=ModbusRtuFramer, address=("0.0.0.0", 5021))
+
 if __name__ == "__main__":
     print("启动 RTU over TCP 服务器，端口 5020")
-    StartTcpServer(context, framer=ModbusRtuFramer, address=("0.0.0.0", 5020))
+    asyncio.run(run_server())
