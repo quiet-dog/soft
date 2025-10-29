@@ -3,6 +3,8 @@ package router
 import (
 	"devinggo/manage/controller/manage"
 
+	"devinggo/modules/system/service"
+
 	"github.com/gogf/gf/v2/net/ghttp"
 )
 
@@ -20,7 +22,6 @@ func BindController(group *ghttp.RouterGroup) {
 			manage.AlarmController,
 			manage.EventController,
 			manage.DeviceControlController,
-		)
+		).Middleware(service.Middleware().AdminAuth)
 	})
-
 }

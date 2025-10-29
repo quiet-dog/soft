@@ -48,7 +48,7 @@ func (h *deviceHook) AfterSelectHook(ctx context.Context, in *gdb.HookSelectInpu
 			item["server_name"], _ = dao.ManageServer.Ctx(ctx).WherePri(item["server_id"].Int64()).Value("name")
 		}
 		if !item[dao.ManageDevice.Columns().Id].IsEmpty() {
-			data, _ := manage.ManageSensorCache().GetDevice(ctx, item[dao.ManageDevice.Columns().Id].Int64())
+			data, _ := manage.ManageSensorDataCache().GetDevice(ctx, item[dao.ManageDevice.Columns().Id].Int64())
 			if len(data) > 0 {
 				item["is_online"] = g.NewVar(true)
 			} else {

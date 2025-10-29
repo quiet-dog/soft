@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"devinggo/manage/dao"
 	"devinggo/manage/pkg/expr_template"
 	"devinggo/manage/service/manage"
 	"devinggo/modules/system/logic/base"
@@ -42,6 +43,14 @@ func (s *sSensorTemplateCache) Get(ctx context.Context, sensorId int64) (templat
 	}
 
 	if v.IsEmpty() || v.IsNil() {
+		var tem string
+		v, err = dao.ManageSensor.Ctx(ctx).Fields("template").Where(dao.ManageSensor.Columns().Id, sensorId).Value()
+		if err != nil {
+			return
+		}
+		tem = v.String()
+		template = expr_template.ExprTemplate(tem)
+		s.Store(ctx, sensorId)
 		return
 	}
 
@@ -52,12 +61,14 @@ func (s *sSensorTemplateCache) Get(ctx context.Context, sensorId int64) (templat
 func (s *sSensorTemplateCache) Store(ctx context.Context, sensorId int64) (template expr_template.ExprTemplate, err error) {
 	key := fmt.Sprintf("%s-%d", sensorTemplateCacheKey, sensorId)
 
-	info, err := manage.ManageSensor().Read(ctx, sensorId)
+	var tem string
+	v, err := dao.ManageSensor.Ctx(ctx).Fields("template").Where(dao.ManageSensor.Columns().Id, sensorId).Value()
 	if err != nil {
 		return
 	}
+	tem = v.String()
 
-	template = expr_template.ExprTemplate(info.Template)
+	template = expr_template.ExprTemplate(tem)
 
 	_, err = s.Model(ctx).Set(ctx, key, string(template), gredis.SetOption{
 		TTLOption: gredis.TTLOption{

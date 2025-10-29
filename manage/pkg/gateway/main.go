@@ -48,7 +48,7 @@ func (g *Gateway) GetClient(serviceId int64) (*Client, bool) {
 	return nil, false
 }
 
-func (g *Gateway) Control(serviceId int64, commands ...gjson.Json) (err error) {
+func (g *Gateway) Control(serviceId int64, commands ...*gjson.Json) (err error) {
 	if client, ok := g.Devices.Load(serviceId); ok {
 		return client.Control(commands...)
 	}

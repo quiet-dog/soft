@@ -41,7 +41,7 @@
     { 
       title: '公告类型', dataIndex: 'noticId', search: true, width: 180,editDisabled: true,
       commonRules: [{ required: true, message: '公告类型必选' }], formType: 'radio',
-      dict: { name: 'backend_notice_type', props: { label: 'title', value: 'key' }, translation: true },
+      dict: { props: { label: 'title', value: 'key',remote:"" }, translation: true },
       addDefaultValue: 1
     },
     {

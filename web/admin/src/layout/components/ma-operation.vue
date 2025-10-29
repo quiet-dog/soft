@@ -157,6 +157,9 @@ if (appStore.ws) {
       innerHTML: "<p>1</p>"
     }))
   })
+  Wsm.ws.subscribe("sensor_data", (data, ws) => {
+      console.log("aaaaaaa", data)
+  })
 }
 
 </script>

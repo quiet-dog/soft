@@ -155,7 +155,7 @@ func (s *sServer) Save(ctx context.Context, in *req.ManageServerSave) (id int64,
 }
 
 func (s *sServer) Delete(ctx context.Context, ids []int64) (err error) {
-	dao.ManageOpc.Ctx(ctx).Where(dao.ManageOpc.Columns().ServerId, ids).Delete()
+	dao.ManageOpc.Ctx(ctx).Unscoped().Where(dao.ManageOpc.Columns().ServerId, ids).Delete()
 	_, err = s.Model(ctx).WhereIn("id", ids).Delete()
 	return
 }

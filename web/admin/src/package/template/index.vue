@@ -1,7 +1,7 @@
 <script lang='ts' setup>
 import { computed, onMounted, ref, shallowRef, watch } from "vue"
 import "./index"
-import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
+// import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
 import sensor from "@/api/manage/sensor";
 import { TemplateEnv } from "@/api/manage/sensor/types";
 import { Message } from '@arco-design/web-vue';
@@ -58,8 +58,8 @@ function beforeOpen() {
     })
 }
 
-function formatValue(value){
-    if(Array.isArray(value)){
+function formatValue(value) {
+    if (Array.isArray(value)) {
         // 按照，隔开
         return value.join(",")
     }
@@ -70,7 +70,7 @@ const data = computed(() => {
     return [
         {
             label: "值",
-            value:formatValue(sensorData.value?.value.value)
+            value: formatValue(sensorData.value?.value.value)
         }, {
             label: "值类型",
             value: sensorData.value?.type
@@ -112,8 +112,11 @@ function translateData() {
         }" align="center" :data="data" />
         <AButton type="primary" @click="translateData">转换</AButton>
         <div style="height: 500px;width:1000px;margin: auto;">
+            /**
             <VueMonacoEditor v-model:value="code" language="javascript" theme="vs-dark" :options="MONACO_EDITOR_OPTIONS"
                 @mount="handleMount" />
+            */
+            <AInput type="textarea" v-model="code" />
         </div>
     </AModal>
 </template>

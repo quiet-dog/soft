@@ -99,7 +99,7 @@ type (
 		TestDataByDeviceId(ctx context.Context, deviceId int64, in *req.ManageSensorReadData) (rs *common.TemplateEnv, err error)
 	}
 
-	IManageSensorCache interface {
+	IManageSensorDataCache interface {
 		Model(ctx context.Context) *gredis.Redis
 		Store(ctx context.Context, key int64, value gateway.Value) (v *gvar.Var, err error)
 		Get(ctx context.Context, key int64) (t gateway.Value, err error)
@@ -151,6 +151,10 @@ type (
 		AddControl(ctx context.Context, in *req.ManageAddDeviceControlInfo) (err error)
 		Control(ctx context.Context, controlId int64) (err error)
 	}
+
+	IManageThird interface {
+		SendSensorDataByWs(ctx context.Context, value gateway.Msg)
+	}
 )
 
 var (
@@ -163,13 +167,14 @@ var (
 	localManageOpc                 IManageOpc
 	localInfluxdb                  IManageInfluxdb
 	localModbus                    IManageModbus
-	localManageSensorCache         IManageSensorCache
+	localManageSensorDataCache     IManageSensorDataCache
 	localManageThreshold           IManageThreshold
 	localManageThresholdCache      IManageThresholdCache
 	localManageEvent               IManageEvent
 	localManageSensorTemplateCache IManageSensorTemplateCache
 	localManageAlarm               IManageAlarm
 	localManageDeviceControl       IManageDeviceControl
+	localManageThird               IManageThird
 )
 
 func ManageArea() IManageArea {
@@ -271,15 +276,15 @@ func RegisterManageModbus(i IManageModbus) {
 	localModbus = i
 }
 
-func ManageSensorCache() IManageSensorCache {
-	if localManageSensorCache == nil {
-		panic("implement not found for interface localManageSensorCache, forgot register?")
+func ManageSensorDataCache() IManageSensorDataCache {
+	if localManageSensorDataCache == nil {
+		panic("implement not found for interface localManageSensorDataCache, forgot register?")
 	}
-	return localManageSensorCache
+	return localManageSensorDataCache
 }
 
-func RegisterManageSensorCache(i IManageSensorCache) {
-	localManageSensorCache = i
+func RegisterManageSensorDataCache(i IManageSensorDataCache) {
+	localManageSensorDataCache = i
 }
 
 func ManageThreshold() IManageThreshold {
@@ -347,4 +352,15 @@ func ManageDeviceControl() IManageDeviceControl {
 
 func RegisterManageDeviceControl(i IManageDeviceControl) {
 	localManageDeviceControl = i
+}
+
+func ManageThird() IManageThird {
+	if localManageThird == nil {
+		panic("implement not found for interface localManageThird, forgot register?")
+	}
+	return localManageThird
+}
+
+func RegisterManageThird(i IManageThird) {
+	localManageThird = i
 }

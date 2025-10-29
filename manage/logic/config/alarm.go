@@ -79,7 +79,6 @@ func (s *sAlarm) sendMsg(ctx context.Context, alarmId int64) {
 		return
 	}
 	toId := "1"
-
 	clientIdWResponse := &websocket2.ClientIdWResponse{
 		ID: toId,
 		WResponse: &websocket2.WResponse{

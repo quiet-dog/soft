@@ -215,7 +215,7 @@ func (c *Client) IsOnline() bool {
 	return false
 }
 
-func (c *Client) Control(commands ...gjson.Json) (err error) {
+func (c *Client) Control(commands ...*gjson.Json) (err error) {
 	// opc 设备的节点添加
 	if v, ok := c.client.(*ModbusTcpClient); ok {
 		return v.Control(commands...)

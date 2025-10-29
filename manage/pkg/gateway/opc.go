@@ -130,21 +130,29 @@ func (c *OpcClient) connectAndSubscribeOnce(channel chan Value) (err error) {
 	m.SetErrorHandler(func(_ *opcua.Client, sub *monitor.Subscription, err error) {
 		log.Printf("error: sub=%d err=%s", sub.SubscriptionID(), err.Error())
 	})
-	wg := &sync.WaitGroup{}
 
-	c.isOnline = true
+	go c.watchOnline(ctx)
+	c.startChanSub(ctx, m, c.conf.SubTime, 0)
 
-	// // start callback-based subscription
-	// wg.Add(1)
-	// go startCallbackSub(ctx, m, 2*time.Second, 0, wg, "ns=3;i=3")
-
-	// // start channel-based subscription
-	wg.Add(1)
-	go c.startChanSub(ctx, m, c.conf.SubTime, 0, wg)
-
-	wg.Wait()
-	c.isOnline = false
 	return
+}
+
+func (c *OpcClient) watchOnline(ctx context.Context) {
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done(): // 使用传入的 ctx
+			c.isOnline = false
+			return // 退出 goroutine
+		case <-ticker.C:
+			if c.client != nil && c.client.State().String() == "Connected" {
+				c.isOnline = true
+			} else {
+				c.isOnline = false
+			}
+		}
+	}
 }
 
 func (c *OpcClient) startCallbackSub(ctx context.Context, m *monitor.NodeMonitor, interval, lag time.Duration, wg *sync.WaitGroup, nodes ...string) {
@@ -167,12 +175,12 @@ func (c *OpcClient) startCallbackSub(ctx context.Context, m *monitor.NodeMonitor
 		log.Fatal(err)
 	}
 
-	defer cleanup(ctx, sub, wg)
+	defer cleanup(ctx, sub)
 
 	<-ctx.Done()
 }
 
-func (c *OpcClient) startChanSub(ctx context.Context, m *monitor.NodeMonitor, interval, lag time.Duration, wg *sync.WaitGroup, nodes ...string) {
+func (c *OpcClient) startChanSub(ctx context.Context, m *monitor.NodeMonitor, interval, lag time.Duration, nodes ...string) {
 	ch := make(chan *monitor.DataChangeMessage, 16)
 	for _, v := range c.nodes {
 		nodes = append(nodes, v.NodeId)
@@ -182,59 +190,91 @@ func (c *OpcClient) startChanSub(ctx context.Context, m *monitor.NodeMonitor, in
 		log.Fatal(err)
 	}
 	c.sub = sub
-	defer cleanup(ctx, sub, wg)
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(5 * time.Second):
-			if err = c.TestPing(); err != nil {
-				c.isOnline = false
-				c.client.Close(ctx)
-				c.cancel()
-				return
+	defer cleanup(ctx, sub)
+
+	for msg := range ch {
+		if msg.Error != nil {
+			log.Printf("[channel ] sub=%d error=%s", sub.SubscriptionID(), msg.Error)
+		} else {
+			if c.channel == nil {
+				continue
 			}
-		case msg := <-ch:
-			fmt.Println("===============================来自通道信息")
-			if msg.Error != nil {
-				log.Printf("[channel ] sub=%d error=%s", sub.SubscriptionID(), msg.Error)
-			} else {
-				if c.channel == nil {
+			nodes := []Value{}
+			for _, node := range c.nodes {
+				if node.NodeId == msg.NodeID.String() {
+					nodes = append(nodes, Value{
+						ID:         node.ID,
+						Value:      msg.Value.Value(),
+						CreateTime: msg.SourceTimestamp,
+						Type:       msg.Value.Type().String(),
+					})
+					fmt.Println("Received nodes:=========", node.ID)
+				}
+			}
+			for _, v := range nodes {
+				select {
+				case c.channel <- v:
+				default:
+					// log.Println("[WARN] Channel is full, dropping message")
 					continue
 				}
-				nodes := []Value{}
-				for _, node := range c.nodes {
-					if node.NodeId == msg.NodeID.String() {
-						nodes = append(nodes, Value{
-							ID:         node.ID,
-							Value:      msg.Value.Value(),
-							CreateTime: msg.SourceTimestamp,
-							Type:       msg.Value.Type().String(),
-						})
-						fmt.Println("Received nodes:=========", node.ID)
-					}
-				}
-				for _, v := range nodes {
-					select {
-					case c.channel <- v:
-					default:
-						// log.Println("[WARN] Channel is full, dropping message")
-						continue
-					}
-				}
-
-				// log.Printf("[channel ] sub=%d ts=%s node=%s value=%v", sub.SubscriptionID(), msg.SourceTimestamp.UTC().Format(time.RFC3339), msg.NodeID, msg.Value.Value())
 			}
-			time.Sleep(lag)
 
+			// log.Printf("[channel ] sub=%d ts=%s node=%s value=%v", sub.SubscriptionID(), msg.SourceTimestamp.UTC().Format(time.RFC3339), msg.NodeID, msg.Value.Value())
 		}
+		time.Sleep(lag)
 	}
+	// for {
+	// 	select {
+	// 	case <-ctx.Done():
+	// 		return
+	// 	// case <-time.After(5 * time.Second):
+	// 	// 	if err = c.TestPing(); err != nil {
+	// 	// 		c.isOnline = false
+	// 	// 		c.client.Close(ctx)
+	// 	// 		c.cancel()
+	// 	// 		return
+	// 	// 	}
+	// 	case msg := <-ch:
+	// 		fmt.Println("===============================来自通道信息")
+	// 		if msg.Error != nil {
+	// 			log.Printf("[channel ] sub=%d error=%s", sub.SubscriptionID(), msg.Error)
+	// 		} else {
+	// 			if c.channel == nil {
+	// 				continue
+	// 			}
+	// 			nodes := []Value{}
+	// 			for _, node := range c.nodes {
+	// 				if node.NodeId == msg.NodeID.String() {
+	// 					nodes = append(nodes, Value{
+	// 						ID:         node.ID,
+	// 						Value:      msg.Value.Value(),
+	// 						CreateTime: msg.SourceTimestamp,
+	// 						Type:       msg.Value.Type().String(),
+	// 					})
+	// 					fmt.Println("Received nodes:=========", node.ID)
+	// 				}
+	// 			}
+	// 			for _, v := range nodes {
+	// 				select {
+	// 				case c.channel <- v:
+	// 				default:
+	// 					// log.Println("[WARN] Channel is full, dropping message")
+	// 					continue
+	// 				}
+	// 			}
+
+	// 			// log.Printf("[channel ] sub=%d ts=%s node=%s value=%v", sub.SubscriptionID(), msg.SourceTimestamp.UTC().Format(time.RFC3339), msg.NodeID, msg.Value.Value())
+	// 		}
+	// 		time.Sleep(lag)
+
+	// 	}
+	// }
 }
 
-func cleanup(ctx context.Context, sub *monitor.Subscription, wg *sync.WaitGroup) {
+func cleanup(ctx context.Context, sub *monitor.Subscription) {
 	log.Printf("stats: sub=%d delivered=%d dropped=%d", sub.SubscriptionID(), sub.Delivered(), sub.Dropped())
 	sub.Unsubscribe(ctx)
-	wg.Done()
 }
 
 func (c *OpcClient) AddNodes(nodes ...OpcNode) {
@@ -249,7 +289,7 @@ func (c *OpcClient) AddNodes(nodes ...OpcNode) {
 	}
 }
 
-func (c *OpcClient) Control(extends ...gjson.Json) (err error) {
+func (c *OpcClient) Control(extends ...*gjson.Json) (err error) {
 	for _, v := range extends {
 		if c.client != nil && c.isOnline {
 			controlType := v.Get("type").String()

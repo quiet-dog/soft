@@ -65,7 +65,7 @@ var (
 			cmd.CmdInit(ctx, parser)
 			g.Log().Debug(ctx, "starting all server")
 			// 需要启动的服务
-			var allServers = []*gcmd.Command{cmd.Http, cmd.Worker, manageCmd.DeviceGateway}
+			var allServers = []*gcmd.Command{cmd.Http, cmd.Worker, manageCmd.DeviceGateway, manageCmd.ThirdSensorData, manageCmd.ThirdSw}
 
 			for _, server := range allServers {
 				var cmd = server

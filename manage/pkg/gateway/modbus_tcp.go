@@ -133,14 +133,16 @@ func (c *ModbusTcpClient) connectAndSubscribeOnce(channel chan Value) (err error
 				// 选择寄存器类型
 				var regType modbus.RegType
 
-				if sensor.ReadType == 1 {
+				switch sensor.ReadType {
+				case 1:
 					regType = modbus.HOLDING_REGISTER
-				} else if sensor.ReadType == 2 {
+				case 2:
 					regType = modbus.INPUT_REGISTER
-				} else {
+				default:
 					fmt.Printf("无效的 ReadType: %d (SensorID: %d)\n", sensor.ReadType, sensor.SensorId)
 					continue
 				}
+
 				// 读取寄存器
 				rs, err := c.client.ReadRegisters(sensor.StartAddress, sensor.Quantity, regType)
 				if err != nil {
@@ -205,7 +207,7 @@ func (c *ModbusTcpClient) AddNodes(devices ...ModbusDevice) {
 }
 
 // Control 写入寄存器
-func (c *ModbusTcpClient) Control(commands ...gjson.Json) (err error) {
+func (c *ModbusTcpClient) Control(commands ...*gjson.Json) (err error) {
 	for _, command := range commands {
 		startAddr := command.Get("startAddr").Uint16()
 		values := command.Get("value").Int64s()

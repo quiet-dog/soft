@@ -40,7 +40,7 @@ type sensorHook struct{}
 func (s *sensorHook) AfterSelectHook(ctx context.Context, in *gdb.HookSelectInput, result *gdb.Result) (err error) {
 	for _, item := range *result {
 		if !item[dao.ManageSensor.Columns().Id].IsEmpty() {
-			t, err := manage.ManageSensorCache().Get(ctx, item[dao.ManageSensor.Columns().Id].Int64())
+			t, err := manage.ManageSensorDataCache().Get(ctx, item[dao.ManageSensor.Columns().Id].Int64())
 			item["is_online"] = g.NewVar(true)
 			if err != nil {
 				item["is_online"] = g.NewVar(false)

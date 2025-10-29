@@ -155,7 +155,7 @@ func (c *ModbusRtuOverTcpClient) AddNodes(devices ...ModbusDevice) {
 }
 
 // Control 写入寄存器
-func (c *ModbusRtuOverTcpClient) Control(commands ...gjson.Json) (err error) {
+func (c *ModbusRtuOverTcpClient) Control(commands ...*gjson.Json) (err error) {
 	for _, command := range commands {
 		startAddr := command.Get("startAddr").Uint16()
 		values := command.Get("value").Int64s()
