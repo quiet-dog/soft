@@ -35,6 +35,7 @@ type ManageOpcColumns struct {
 	ParentId        string //
 	NamespacesIndex string //
 	BrowseName      string //
+	DisplayName     string // 显示名称
 }
 
 // manageOpcColumns holds the columns for the table manage_opc.
@@ -53,6 +54,7 @@ var manageOpcColumns = ManageOpcColumns{
 	ParentId:        "parent_id",
 	NamespacesIndex: "namespaces_index",
 	BrowseName:      "browse_name",
+	DisplayName:     "display_name",
 }
 
 // NewManageOpcDao creates and returns a new DAO object for table data access.

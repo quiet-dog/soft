@@ -3,7 +3,7 @@ package manage
 import (
 	"devinggo/manage/model/req"
 	"devinggo/manage/model/res"
-	"devinggo/manage/model/res/device"
+	"devinggo/manage/pkg/gateway"
 	"devinggo/modules/system/model"
 
 	"github.com/gogf/gf/v2/frame/g"
@@ -16,7 +16,7 @@ type InitOpcReq struct {
 
 type InitOpcRes struct {
 	g.Meta `mime:"application/json" description:"初始化OPC设备树结果"`
-	Data   []*device.OpcTree `json:"data" description:"OPC设备树"`
+	Data   *gateway.NodeDef `json:"data" description:"OPC设备树"`
 }
 
 type OpcTreeReq struct {

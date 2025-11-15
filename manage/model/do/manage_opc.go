@@ -26,4 +26,5 @@ type ManageOpc struct {
 	ParentId        interface{} //
 	NamespacesIndex interface{} //
 	BrowseName      interface{} //
+	DisplayName     interface{} // 显示名称
 }

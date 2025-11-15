@@ -11,7 +11,6 @@ import (
 	"devinggo/manage/model/common"
 	"devinggo/manage/model/req"
 	"devinggo/manage/model/res"
-	"devinggo/manage/model/res/device"
 	"devinggo/manage/pkg/expr_template"
 	"devinggo/manage/pkg/gateway"
 	"devinggo/modules/system/model"
@@ -82,7 +81,7 @@ type (
 	}
 
 	IManageOpc interface {
-		InitOpc(ctx context.Context, serverId int64) (result []*device.OpcTree, err error)
+		InitOpc(ctx context.Context, serverId int64, id string) (result *gateway.NodeDef, err error)
 		Tree(ctx context.Context, in *req.OpcTreeReq) (rs []*res.OpcTree, err error)
 		ReadData(ctx context.Context, opcId int64) (rs *common.TemplateEnv, err error)
 		Read(ctx context.Context, opcId int64) (opcInfo *res.OpcInfo, err error)

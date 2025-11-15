@@ -25,17 +25,21 @@ const emit = defineEmits<{
 
 const treeData = ref<TreeLeaf[]>([]);
 
+const columns = [{
+    title: "DisplayName",
+    dataIndex: "displayName"
+}, {
+    title: "BrowseName",
+    dataIndex: "browseName"
+}, {
+    title: "NodeId",
+    dataIndex: "nodeId"
+}]
 
-
-const loadMore = (nodeData) => {
-    return new Promise((resolve) => {
-        console.log("loadMore", nodeData);
-        opc.treeLazy(serverId, nodeData.value).then(res => {
-            if (res.data) {
-                nodeData.children = res.data;
-            }
-            resolve(null);
-        });
+const loadMore = async (nodeData, done) => {
+    await opc.treeLazy(serverId, nodeData.value).then(res => {
+        console.log("res.data",res.data)
+        done(res.data);
     });
 };
 
@@ -66,12 +70,18 @@ function handleOpen() {
 </script>
 
 <template>
-    <AModal @open="handleOpen" @close="onClose" v-model:visible="visible" title="OPC节点配置">
-        <a-tree :checked-strategy="'child'" @select="select" :data="treeData" :load-more="loadMore" :field-names="{
+    <AModal height="800px" width="800px" @open="handleOpen" @close="onClose" v-model:visible="visible" title="OPC节点配置">
+        <!-- <a-tree :checked-strategy="'child'" @select="select" :data="treeData" :load-more="loadMore" :field-names="{
             key: 'value',
             title: 'label',
             children: 'children'
-        }" />
+        }" /> -->
+        <ARow>
+            <ACol :span="12">
+                <ATable :columns="columns" :data="treeData" :load-more="loadMore" />
+            </ACol>
+            <ACol :span="12"></ACol>
+        </ARow>
     </AModal>
 </template>
 

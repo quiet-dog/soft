@@ -24,4 +24,5 @@ type ManageOpc struct {
 	ParentId        int64       `json:"parentId"        orm:"parent_id"        description:""`     //
 	NamespacesIndex int         `json:"namespacesIndex" orm:"namespaces_index" description:""`     //
 	BrowseName      string      `json:"browseName"      orm:"browse_name"      description:""`     //
+	DisplayName     string      `json:"displayName"     orm:"display_name"     description:"显示名称"` // 显示名称
 }
