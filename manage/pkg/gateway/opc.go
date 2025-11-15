@@ -146,6 +146,7 @@ func (c *OpcClient) watchOnline(ctx context.Context) {
 			c.isOnline = false
 			return // 退出 goroutine
 		case <-ticker.C:
+			fmt.Println("=====", c.client.State().String())
 			if c.client != nil && c.client.State().String() == "Connected" {
 				c.isOnline = true
 			} else {

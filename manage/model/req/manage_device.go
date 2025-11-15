@@ -38,3 +38,5 @@ type DeviceImportModelReq struct {
 	Path     string `json:"path"`
 	DeviceId int64  `json:"deviceId" v:"required" description:"服务id"` // 设备id
 }
+
+type DeviceSensorInfoSaveReq []*ManageSensorSave

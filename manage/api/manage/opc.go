@@ -29,3 +29,14 @@ type OpcTreeRes struct {
 	g.Meta `mime:"application/json" description:"OPC设备树结果"`
 	Data   []*res.OpcTree `json:"data" description:"OPC设备树"`
 }
+
+type OpcNodeIdIsExitReq struct {
+	g.Meta `path:"/opc/isExit" tags:"Device" method:"post" summary:"获取OPC设备树" x-permission:"manage:opc:isExit"`
+	model.AuthorHeader
+	req.OpcReadByServer
+}
+
+type OpcNodeIdIsExitRes struct {
+	g.Meta `mime:"application/json" description:"OPC设备树结果"`
+	Data   int64 `json:"data" description:"是否存在"`
+}

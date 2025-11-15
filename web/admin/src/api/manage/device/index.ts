@@ -1,6 +1,7 @@
 import { http } from "@/utils/http";
 import { BaseIds, Page, TreeLeaf } from "../base";
-import { DeviceEdit, DeviceRead, DeviceRow, DeviceSearch, DeviceTest } from "./types";
+import { DeviceEdit, DeviceInfo, DeviceRead, DeviceRow, DeviceSearch, DeviceTest } from "./types";
+import { SensorRow } from "../sensor/types";
 
 export default {
     list: (params: DeviceSearch) => {
@@ -37,6 +38,12 @@ export default {
             method: 'get',
         });
     },
+    readSensorInfo: (id: number) => {
+        return http<DeviceInfo>({
+            url: '/manage/device/readSensorInfo/' + id,
+            method: 'get',
+        });
+    },
     test: (data: DeviceTest) => {
         return http({
             url: '/manage/device/test',
@@ -52,6 +59,13 @@ export default {
                 deviceId,
                 path
             }
+        })
+    },
+    saveSensorInfo(data: SensorRow[]) {
+        return http({
+            url: "/manage/device/saveSensorInfo",
+            method: "post",
+            data
         })
     }
 }

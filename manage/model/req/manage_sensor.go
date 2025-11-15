@@ -15,6 +15,7 @@ type ManageSensorSearch struct {
 }
 
 type ManageSensorSave struct {
+	Id           int64       `json:"id"`
 	Name         string      `json:"name" v:"required|max-length:255" description:"传感器名称"` // 传感器名称
 	SensorTypeId int64       `json:"sensorTypeId" v:"required" description:"传感器类型ID"`      // 传感器类型ID
 	DeviceId     int64       `json:"deviceId" v:"required" description:"设备ID"`             // 设备ID

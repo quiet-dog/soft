@@ -7,10 +7,10 @@ import (
 	"devinggo/manage/model/req"
 	"devinggo/manage/model/res"
 	"devinggo/manage/pkg/gateway"
-	"devinggo/manage/pkg/hook"
 	"devinggo/manage/service/manage"
 	"devinggo/modules/system/logic/base"
 	"devinggo/modules/system/model"
+	"devinggo/modules/system/pkg/hook"
 	"devinggo/modules/system/pkg/orm"
 	"devinggo/modules/system/pkg/utils"
 	"fmt"
@@ -36,32 +36,32 @@ func NewManageDevice() *sDevice {
 	return &sDevice{}
 }
 
-type deviceHook struct {
-}
+// type deviceHook struct {
+// }
 
-func (h *deviceHook) AfterSelectHook(ctx context.Context, in *gdb.HookSelectInput, result *gdb.Result) (err error) {
-	for _, item := range *result {
-		if !item["area_id"].IsEmpty() {
-			item["area_name"], _ = dao.ManageArea.Ctx(ctx).WherePri(item["area_id"].Int64()).Value("name")
-		}
-		if !item["server_id"].IsEmpty() {
-			item["server_name"], _ = dao.ManageServer.Ctx(ctx).WherePri(item["server_id"].Int64()).Value("name")
-		}
-		if !item[dao.ManageDevice.Columns().Id].IsEmpty() {
-			data, _ := manage.ManageSensorDataCache().GetDevice(ctx, item[dao.ManageDevice.Columns().Id].Int64())
-			if len(data) > 0 {
-				item["is_online"] = g.NewVar(true)
-			} else {
-				item["is_online"] = g.NewVar(false)
-			}
-		}
-	}
-	return
-}
+// func (h *deviceHook) AfterSelectHook(ctx context.Context, in *gdb.HookSelectInput, result *gdb.Result) (err error) {
+// 	for _, item := range *result {
+// 		if !item["area_id"].IsEmpty() {
+// 			item["area_name"], _ = dao.ManageArea.Ctx(ctx).WherePri(item["area_id"].Int64()).Value("name")
+// 		}
+// 		if !item["server_id"].IsEmpty() {
+// 			item["server_name"], _ = dao.ManageServer.Ctx(ctx).WherePri(item["server_id"].Int64()).Value("name")
+// 		}
+// 		if !item[dao.ManageDevice.Columns().Id].IsEmpty() {
+// 			data, _ := manage.ManageSensorDataCache().GetDevice(ctx, item[dao.ManageDevice.Columns().Id].Int64())
+// 			if len(data) > 0 {
+// 				item["is_online"] = g.NewVar(true)
+// 			} else {
+// 				item["is_online"] = g.NewVar(false)
+// 			}
+// 		}
+// 	}
+// 	return
+// }
 
 func (s *sDevice) Model(ctx context.Context) *gdb.Model {
-	dHook := &deviceHook{}
-	return dao.ManageDevice.Ctx(ctx).Hook(hook.Bind(dHook)).Handler().Cache(orm.SetCacheOption(ctx)).OnConflict("id")
+	// dHook := &deviceHook{}
+	return dao.ManageDevice.Ctx(ctx).Handler().Hook(hook.Bind()).Cache(orm.SetCacheOption(ctx)).OnConflict("id")
 }
 
 func (s *sDevice) GetPageListForSearch(ctx context.Context, req *model.PageListReq, in *req.ManageDeviceSearch) (res []*res.DeviceTableRow, total int, err error) {
@@ -133,6 +133,40 @@ func (s *sDevice) GetInfoByIds(ctx context.Context, deviceIds []int64) (deviceIn
 
 func (s *sDevice) Read(ctx context.Context, deviceId int64) (deviceInfo *res.DeviceInfo, err error) {
 	deviceInfo, err = s.GetInfoById(ctx, deviceId)
+	return
+}
+
+func (s *sDevice) ReadSensorInfo(ctx context.Context, deviceId int64) (info *res.DeviceSensorInfo, err error) {
+	deviceInfo, err := s.GetInfoById(ctx, deviceId)
+	if err != nil {
+		return
+	}
+
+	if err = gconv.Struct(deviceInfo, &info); err != nil {
+		return
+	}
+
+	// 获取对应的传感器
+	res, _, err := NewManageSensor().GetPageListForSearch(ctx, &model.PageListReq{}, &req.ManageSensorSearch{
+		DeviceId: deviceId,
+	})
+	if err != nil {
+		return
+	}
+
+	info.Sensors = append(info.Sensors, res...)
+
+	return
+}
+
+func (s sDevice) SaveSensorInfo(ctx context.Context, r []*req.ManageSensorSave) (err error) {
+	for _, v := range r {
+		fmt.Println(v.Extend.Get("id"))
+		_, err = NewManageSensor().Save(ctx, v)
+		if utils.IsError(err) {
+			return
+		}
+	}
 	return
 }
 

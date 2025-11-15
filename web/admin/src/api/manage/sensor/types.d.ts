@@ -7,6 +7,8 @@ export interface SensorAdd {
     extend?: any;
     remark?: string;
     sensorTypeId: number;
+    unit?: string,
+    template?: string
 }
 
 

@@ -17,6 +17,7 @@ type SensorTableRow struct {
 	Template       string      `json:"template" description:"模板内容"`        // 模板内容
 	Value          any         `json:"value" description:"当前值"`            // 当前值
 	IsOnline       bool        `json:"isOnline" description:"是否在线"`        // 是否在线
+	Unit           string      `json:"unit" description:"单位"`
 }
 
 type SensorInfo struct {

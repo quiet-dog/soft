@@ -38,7 +38,7 @@ const columns = [{
 
 const loadMore = async (nodeData, done) => {
     await opc.treeLazy(serverId, nodeData.value).then(res => {
-        console.log("res.data",res.data)
+        console.log("res.data", res.data)
         done(res.data);
     });
 };

@@ -28,3 +28,8 @@ type DeviceInfo struct {
 	Server    *ServerTableRow `json:"server" description:"服务器信息"`   // 服务器信息
 	ModelPath string          `json:"modelPath" description:"模型路径"` // 模型路径
 }
+
+type DeviceSensorInfo struct {
+	DeviceInfo
+	Sensors []*SensorTableRow `json:"sensors" description:"传感器列表"` // 模型路径
+}

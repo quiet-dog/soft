@@ -8,9 +8,7 @@ import { ServerTreeLeaf } from "@/api/manage/server/types"
 export async function getAsyncServerConfigComponent(serverId: number) {
     const res = await server.read(serverId)
     if (res.data?.type === 'opc') {
-        return defineAsyncComponent(() => {
-            return import("@/package/device/opc/index.vue")
-        })
+        return null;
     }
 
     if (res.data?.type.includes('modbus')) {
@@ -141,7 +139,7 @@ export function useDeviceHook() {
         asyncComponent.value = await getAsyncServerConfigComponent(value)
         asyncServerId.value = value
         crudRef.value.getFormData().serverId = value
-        sExtend.value = crudRef.value.getFormData().extend
+        // sExtend.value = crudRef.value.getFormData().extend
     }
 
     const loadServerOptions = () => {

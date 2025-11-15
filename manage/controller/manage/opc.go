@@ -31,3 +31,9 @@ func (c *opcController) OpcTree(ctx context.Context, in *manage.OpcTreeReq) (out
 	}
 	return
 }
+
+func (c *opcController) OpcNodeIsExit(ctx context.Context, in *manage.OpcNodeIdIsExitReq) (out *manage.OpcNodeIdIsExitRes, err error) {
+	out = &manage.OpcNodeIdIsExitRes{}
+	out.Data, err = sManage.ManageOpc().OpcNodeIsExit(ctx, &in.OpcReadByServer)
+	return
+}

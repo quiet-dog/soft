@@ -389,6 +389,20 @@ func (s *sOpc) ReadData(ctx context.Context, opcId int64) (rs *common.TemplateEn
 	return
 }
 
+// 判断节点id是否存在
+func (s *sOpc) OpcNodeIsExit(ctx context.Context, in *req.OpcReadByServer) (rs int64, err error) {
+	opcInfo := &res.OpcInfo{}
+
+	err = s.Model(ctx).
+		Where(dao.ManageOpc.Columns().NodeId, in.NodeId).
+		Where(dao.ManageOpc.Columns().ServerId, in.ServerId).Scan(&opcInfo)
+	if err != nil {
+		return
+	}
+
+	return opcInfo.Id, err
+}
+
 const maxDepth = 10
 
 func join(a, b string) string {

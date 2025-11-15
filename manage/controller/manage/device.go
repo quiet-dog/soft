@@ -6,6 +6,7 @@ import (
 	"devinggo/manage/model/res"
 	sManage "devinggo/manage/service/manage"
 	"devinggo/modules/system/controller/base"
+	"os"
 
 	"github.com/gogf/gf/v2/frame/g"
 )
@@ -77,5 +78,18 @@ func (c *deviceController) TestConnect(ctx context.Context, in *manage.DeviceTes
 func (c *deviceController) ImportModel(ctx context.Context, in *manage.DeviceImportModelReq) (out *manage.DeviceImportModelRes, err error) {
 	out = &manage.DeviceImportModelRes{}
 	err = sManage.ManageDevice().ImportModel(ctx, &in.DeviceImportModelReq)
+	return
+}
+
+func (c *deviceController) ReadDeviceSensorInfo(ctx context.Context, in *manage.ReadDeviceSensorInfoReq) (out *manage.ReadDeviceSensorInfoRes, err error) {
+	out = &manage.ReadDeviceSensorInfoRes{}
+	out.Data, err = sManage.ManageDevice().ReadSensorInfo(ctx, in.Id)
+	return
+}
+
+func (c *deviceController) DeviceSaveSensorInfo(ctx context.Context, in *manage.DeviceSaveSensorInfoReq) (out *manage.DeviceSaveSensorInfoRes, err error) {
+	out = &manage.DeviceSaveSensorInfoRes{}
+	os.Exit(0)
+	err = sManage.ManageDevice().SaveSensorInfo(ctx, in.DeviceSensorInfoSaveReq)
 	return
 }

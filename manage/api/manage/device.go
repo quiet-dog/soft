@@ -95,3 +95,24 @@ type DeviceImportModelReq struct {
 type DeviceImportModelRes struct {
 	g.Meta `mime:"application/json"`
 }
+
+type ReadDeviceSensorInfoReq struct {
+	g.Meta `path:"/device/readSensorInfo/{Id}" method:"get" tags:"设备" summary:"获取设备传感器信息." x-permission:"system:device:readSensorInfo"`
+	model.AuthorHeader
+	Id int64 `json:"id" dc:"岗位 id" v:"required|min:1#设备Id不能为空"`
+}
+
+type ReadDeviceSensorInfoRes struct {
+	g.Meta `mime:"application/json"`
+	Data   *res.DeviceSensorInfo `json:"data" dc:"设备信息"`
+}
+
+type DeviceSaveSensorInfoReq struct {
+	g.Meta `path:"/device/saveSensorInfo" method:"post" tags:"设备" summary:"保存设备传感器信息." x-permission:"system:device:saveSensorInfo"`
+	model.AuthorHeader
+	req.DeviceSensorInfoSaveReq
+}
+
+type DeviceSaveSensorInfoRes struct {
+	g.Meta `mime:"application/json"`
+}

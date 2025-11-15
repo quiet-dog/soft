@@ -37,7 +37,10 @@ export interface DeviceTreeLeaf {
     items: TreeLeaf[];
 }
 
-
+export interface DeviceInfo extends DeviceRow {
+    sensors?: SensorRow[];
+    server?: ServerRow;
+}
 
 export interface DeviceTest {
     serverId: number;

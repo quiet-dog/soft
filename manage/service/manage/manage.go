@@ -58,6 +58,8 @@ type (
 		Read(ctx context.Context, deviceId int64) (DeviceInfo *res.DeviceInfo, err error)
 		TestConnect(ctx context.Context, in *req.DeviceTestConnectReq) (err error)
 		ImportModel(ctx context.Context, in *req.DeviceImportModelReq) (err error)
+		ReadSensorInfo(ctx context.Context, deviceId int64) (info *res.DeviceSensorInfo, err error)
+		SaveSensorInfo(ctx context.Context, r []*req.ManageSensorSave) (err error)
 		// GetOpc(ctx context.Context, deviceId int64) (opc *res.OpcInfo, err error)
 	}
 
@@ -85,6 +87,7 @@ type (
 		Tree(ctx context.Context, in *req.OpcTreeReq) (rs []*res.OpcTree, err error)
 		ReadData(ctx context.Context, opcId int64) (rs *common.TemplateEnv, err error)
 		Read(ctx context.Context, opcId int64) (opcInfo *res.OpcInfo, err error)
+		OpcNodeIsExit(ctx context.Context, in *req.OpcReadByServer) (rs int64, err error)
 	}
 
 	IManageInfluxdb interface {

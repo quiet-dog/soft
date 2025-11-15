@@ -9,14 +9,13 @@ import (
 	"devinggo/manage/model/req"
 	"devinggo/manage/model/res"
 	"devinggo/manage/pkg/gateway"
-	"devinggo/manage/pkg/hook"
 	"devinggo/manage/service/manage"
 	"devinggo/modules/system/logic/base"
 	"devinggo/modules/system/model"
 	"devinggo/modules/system/myerror"
+	"devinggo/modules/system/pkg/hook"
 	"devinggo/modules/system/pkg/orm"
 	"devinggo/modules/system/pkg/utils"
-	"errors"
 	"os"
 	"runtime"
 	"strings"
@@ -39,75 +38,75 @@ func NewManageServer() *sServer {
 	return &sServer{}
 }
 
-type serverHook struct{}
+// type serverHook struct{}
 
 // 创建前
-func (s *serverHook) BeforeInsertHook(ctx context.Context, in *gdb.HookInsertInput) (err error) {
-	for _, m := range in.Data {
-		// 是否存在相同的ip和端口
-		if !g.IsEmpty(m[dao.ManageServer.Columns().Ip]) && !g.IsEmpty(m[dao.ManageServer.Columns().Port]) {
-			var result gdb.Record
-			result, err = dao.ManageServer.Ctx(ctx).
-				Where(dao.ManageServer.Columns().Ip, m[dao.ManageServer.Columns().Ip]).
-				Where(dao.ManageServer.Columns().Port, m[dao.ManageServer.Columns().Port]).
-				One()
-			if err != nil {
-				return
-			}
-			if !result.IsEmpty() {
-				return errors.New("服务器已经存在")
-			}
-		}
-	}
+// func (s *serverHook) BeforeInsertHook(ctx context.Context, in *gdb.HookInsertInput) (err error) {
+// 	for _, m := range in.Data {
+// 		// 是否存在相同的ip和端口
+// 		if !g.IsEmpty(m[dao.ManageServer.Columns().Ip]) && !g.IsEmpty(m[dao.ManageServer.Columns().Port]) {
+// 			var result gdb.Record
+// 			result, err = dao.ManageServer.Ctx(ctx).
+// 				Where(dao.ManageServer.Columns().Ip, m[dao.ManageServer.Columns().Ip]).
+// 				Where(dao.ManageServer.Columns().Port, m[dao.ManageServer.Columns().Port]).
+// 				One()
+// 			if err != nil {
+// 				return
+// 			}
+// 			if !result.IsEmpty() {
+// 				return errors.New("服务器已经存在")
+// 			}
+// 		}
+// 	}
 
-	return
-}
+// 	return
+// }
 
-// 创建后
-func (s *serverHook) AfterInsertHook(ctx context.Context, in *gdb.HookInsertInput, result *sql.Result) (err error) {
+// // 创建后
+// func (s *serverHook) AfterInsertHook(ctx context.Context, in *gdb.HookInsertInput, result *sql.Result) (err error) {
 
-	return
-}
+// 	return
+// }
 
-// 更新前
-func (s *serverHook) BeforeUpdateHook(ctx context.Context, in *gdb.HookUpdateInput) (err error) {
+// // 更新前
+// func (s *serverHook) BeforeUpdateHook(ctx context.Context, in *gdb.HookUpdateInput) (err error) {
 
-	switch m := in.Data.(type) {
-	case map[string]interface{}:
-		// 是否存在相同的ip和端口
-		if !g.IsEmpty(m["ip"]) && !g.IsEmpty(m["port"]) {
-			var result gdb.Record
-			result, err = dao.ManageServer.Ctx(ctx).
-				WhereNot(dao.ManageServer.Columns().Id, m[dao.ManageServer.Columns().Id]).
-				Where(dao.ManageServer.Columns().Ip, m[dao.ManageServer.Columns().Ip]).
-				Where(dao.ManageServer.Columns().Port, m[dao.ManageServer.Columns().Port]).
-				One()
-			if err != nil {
-				return
-			}
-			if !result.IsEmpty() {
-				return errors.New("服务器已经存在")
-			}
-		}
-	}
+// 	switch m := in.Data.(type) {
+// 	case map[string]interface{}:
+// 		// 是否存在相同的ip和端口
+// 		if !g.IsEmpty(m["ip"]) && !g.IsEmpty(m["port"]) {
+// 			var result gdb.Record
+// 			result, err = dao.ManageServer.Ctx(ctx).
+// 				WhereNot(dao.ManageServer.Columns().Id, m[dao.ManageServer.Columns().Id]).
+// 				Where(dao.ManageServer.Columns().Ip, m[dao.ManageServer.Columns().Ip]).
+// 				Where(dao.ManageServer.Columns().Port, m[dao.ManageServer.Columns().Port]).
+// 				One()
+// 			if err != nil {
+// 				return
+// 			}
+// 			if !result.IsEmpty() {
+// 				return errors.New("服务器已经存在")
+// 			}
+// 		}
+// 	}
 
-	return
-}
+// 	return
+// }
 
 // 查询后
-func (s *serverHook) AfterSelectHook(ctx context.Context, in *gdb.HookSelectInput, result *gdb.Result) (err error) {
-	for _, item := range *result {
-		if !item[dao.ManageServer.Columns().Id].IsEmpty() {
-			item["is_online"] = g.NewVar(global.DeviceGateway.GetOnline(item[dao.ManageServer.Columns().Id].Int64()))
-		}
+// func (s *serverHook) AfterSelectHook(ctx context.Context, in *gdb.HookSelectInput, result *gdb.Result) (err error) {
+// 	for _, item := range *result {
+// 		if !item[dao.ManageServer.Columns().Id].IsEmpty() {
+// 			item["is_online"] = g.NewVar(global.DeviceGateway.GetOnline(item[dao.ManageServer.Columns().Id].Int64()))
+// 		}
 
-	}
-	return
-}
+// 	}
+// 	return
+// }
 
 func (s *sServer) Model(ctx context.Context) *gdb.Model {
-	h := &serverHook{}
-	return dao.ManageServer.Ctx(ctx).Hook(hook.Bind(h)).Cache(orm.SetCacheOption(ctx)).OnConflict("id")
+	// h := &serverHook{}
+	return dao.ManageServer.Ctx(ctx).Hook(hook.Bind()).Cache(orm.SetCacheOption(ctx)).OnConflict("id")
 }
 
 func (s *sServer) GetPageListForSearch(ctx context.Context, req *model.PageListReq, in *req.ManageServerSearch) (res []*res.ServerTableRow, total int, err error) {
@@ -116,6 +115,10 @@ func (s *sServer) GetPageListForSearch(ctx context.Context, req *model.PageListR
 	if utils.IsError(err) {
 		return nil, 0, err
 	}
+
+	// 获取在线状态
+	s.getIsOnline(res...)
+
 	return
 }
 
@@ -266,4 +269,10 @@ func (s *sServer) handleServerSearch(ctx context.Context, in *req.ManageServerSe
 	}
 
 	return
+}
+
+func (s *sServer) getIsOnline(servers ...*res.ServerTableRow) {
+	for _, v := range servers {
+		v.IsOnline = global.DeviceGateway.GetOnline(v.Id)
+	}
 }

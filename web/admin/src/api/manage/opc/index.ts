@@ -11,5 +11,15 @@ export default {
                 parentId
             }
         });
+    },
+    nodeIdIsExit(serverId: number, nodeId: string) {
+        return http<number>({
+            url: "/manage/opc/isExit",
+            method: 'post',
+            data: {
+                serverId: serverId,
+                nodeId: nodeId
+            }
+        })
     }
 }

@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"database/sql"
 	"devinggo/manage/dao"
 	"devinggo/manage/model/common"
 	"devinggo/manage/model/do"
@@ -9,10 +10,10 @@ import (
 	"devinggo/manage/model/res"
 	"devinggo/manage/pkg/expr_template"
 	"devinggo/manage/pkg/gateway"
-	"devinggo/manage/pkg/hook"
 	"devinggo/manage/service/manage"
 	"devinggo/modules/system/logic/base"
 	"devinggo/modules/system/model"
+	"devinggo/modules/system/pkg/hook"
 	"devinggo/modules/system/pkg/orm"
 	"devinggo/modules/system/pkg/utils"
 	"fmt"
@@ -35,39 +36,39 @@ func NewManageSensor() *sSensor {
 	return &sSensor{}
 }
 
-type sensorHook struct{}
+// type sensorHook struct{}
 
-func (s *sensorHook) AfterSelectHook(ctx context.Context, in *gdb.HookSelectInput, result *gdb.Result) (err error) {
-	for _, item := range *result {
-		if !item[dao.ManageSensor.Columns().Id].IsEmpty() {
-			t, err := manage.ManageSensorDataCache().Get(ctx, item[dao.ManageSensor.Columns().Id].Int64())
-			item["is_online"] = g.NewVar(true)
-			if err != nil {
-				item["is_online"] = g.NewVar(false)
-			}
-			template, err := manage.ManageSensorTemplateCache().Get(ctx, item[dao.ManageSensor.Columns().Id].Int64())
-			if err == nil {
-				v, _ := template.ToExprValueFloat64(t.Value)
-				item["value"] = g.NewVar(v)
-			}
+// func (s *sensorHook) AfterSelectHook(ctx context.Context, in *gdb.HookSelectInput, result *gdb.Result) (err error) {
+// 	for _, item := range *result {
+// 		if !item[dao.ManageSensor.Columns().Id].IsEmpty() {
+// 			t, err := manage.ManageSensorDataCache().Get(ctx, item[dao.ManageSensor.Columns().Id].Int64())
+// 			item["is_online"] = g.NewVar(true)
+// 			if err != nil {
+// 				item["is_online"] = g.NewVar(false)
+// 			}
+// 			template, err := manage.ManageSensorTemplateCache().Get(ctx, item[dao.ManageSensor.Columns().Id].Int64())
+// 			if err == nil {
+// 				v, _ := template.ToExprValueFloat64(t.Value)
+// 				item["value"] = g.NewVar(v)
+// 			}
 
-		}
+// 		}
 
-		if !item[dao.ManageSensor.Columns().DeviceId].IsEmpty() {
-			item["device_name"], _ = dao.ManageDevice.Ctx(ctx).WherePri(item[dao.ManageSensor.Columns().DeviceId].Int64()).Value("name")
-		}
+// 		if !item[dao.ManageSensor.Columns().DeviceId].IsEmpty() {
+// 			item["device_name"], _ = dao.ManageDevice.Ctx(ctx).WherePri(item[dao.ManageSensor.Columns().DeviceId].Int64()).Value("name")
+// 		}
 
-		if !item[dao.ManageSensor.Columns().SensorTypeId].IsEmpty() {
-			item["sensor_type_name"], _ = dao.ManageSensorType.Ctx(ctx).WherePri(item[dao.ManageSensor.Columns().SensorTypeId].Int64()).Value("name")
-		}
+// 		if !item[dao.ManageSensor.Columns().SensorTypeId].IsEmpty() {
+// 			item["sensor_type_name"], _ = dao.ManageSensorType.Ctx(ctx).WherePri(item[dao.ManageSensor.Columns().SensorTypeId].Int64()).Value("name")
+// 		}
 
-	}
-	return
-}
+// 	}
+// 	return
+// }
 
 func (s *sSensor) Model(ctx context.Context) *gdb.Model {
-	v := &sensorHook{}
-	return dao.ManageSensor.Ctx(ctx).Hook(hook.Bind(v)).Handler().Cache(orm.SetCacheOption(ctx)).OnConflict("id")
+	// v := &sensorHook{}
+	return dao.ManageSensor.Ctx(ctx).Handler().Hook(hook.Bind()).Cache(orm.SetCacheOption(ctx)).OnConflict("id")
 }
 
 func (s *sSensor) GetPageListForSearch(ctx context.Context, req *model.PageListReq, in *req.ManageSensorSearch) (res []*res.SensorTableRow, total int, err error) {
@@ -85,7 +86,13 @@ func (s *sSensor) Save(ctx context.Context, in *req.ManageSensorSave) (id int64,
 		return
 	}
 
-	rs, err := s.Model(ctx).Data(device).Insert()
+	var rs sql.Result
+	if in.Id > 0 {
+		rs, err = s.Model(ctx).Data(device).Save()
+	} else {
+		rs, err = s.Model(ctx).Data(device).Insert()
+	}
+
 	if utils.IsError(err) {
 		return 0, err
 	}
