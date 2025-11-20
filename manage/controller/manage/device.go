@@ -6,7 +6,6 @@ import (
 	"devinggo/manage/model/res"
 	sManage "devinggo/manage/service/manage"
 	"devinggo/modules/system/controller/base"
-	"os"
 
 	"github.com/gogf/gf/v2/frame/g"
 )
@@ -89,7 +88,6 @@ func (c *deviceController) ReadDeviceSensorInfo(ctx context.Context, in *manage.
 
 func (c *deviceController) DeviceSaveSensorInfo(ctx context.Context, in *manage.DeviceSaveSensorInfoReq) (out *manage.DeviceSaveSensorInfoRes, err error) {
 	out = &manage.DeviceSaveSensorInfoRes{}
-	os.Exit(0)
-	err = sManage.ManageDevice().SaveSensorInfo(ctx, in.DeviceSensorInfoSaveReq)
+	err = sManage.ManageDevice().SaveSensorInfo(ctx, &in.DeviceSensorInfoSaveReq)
 	return
 }

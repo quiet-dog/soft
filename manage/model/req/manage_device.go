@@ -39,4 +39,7 @@ type DeviceImportModelReq struct {
 	DeviceId int64  `json:"deviceId" v:"required" description:"服务id"` // 设备id
 }
 
-type DeviceSensorInfoSaveReq []*ManageSensorSave
+type DeviceSensorInfoSaveReq struct {
+	Sensors  []*ManageSensorSave `json:"sensors" description:"传感器信息"`
+	DeviceId int64               `json:"deviceId" description:"设备Id"`
+}

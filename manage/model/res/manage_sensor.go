@@ -2,6 +2,7 @@ package res
 
 import (
 	"devinggo/manage/model/base"
+	"time"
 
 	"github.com/gogf/gf/v2/encoding/gjson"
 )
@@ -18,6 +19,7 @@ type SensorTableRow struct {
 	Value          any         `json:"value" description:"当前值"`            // 当前值
 	IsOnline       bool        `json:"isOnline" description:"是否在线"`        // 是否在线
 	Unit           string      `json:"unit" description:"单位"`
+	DataTime       time.Time   `json:"dataTime" description:"数据时间"` // 数据时间
 }
 
 type SensorInfo struct {

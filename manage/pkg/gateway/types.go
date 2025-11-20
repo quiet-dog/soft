@@ -34,6 +34,7 @@ type Value struct {
 	CreateTime time.Time `json:"createTime"`
 	Type       string    `json:"type"`
 	DeviceId   int64     `json:"deviceId"`
+	Unit       string    `json:"unit"`
 }
 
 func (v *OpcNodes) FindByNodeId(nodeId string) *OpcNode {

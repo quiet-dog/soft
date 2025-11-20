@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"devinggo/manage/dao"
+	"devinggo/manage/global"
 	"devinggo/manage/model/common"
 	"devinggo/manage/model/do"
 	"devinggo/manage/model/req"
@@ -20,6 +21,7 @@ import (
 	"time"
 
 	"github.com/gogf/gf/v2/database/gdb"
+	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 )
@@ -77,6 +79,15 @@ func (s *sSensor) GetPageListForSearch(ctx context.Context, req *model.PageListR
 	if utils.IsError(err) {
 		return nil, 0, err
 	}
+	for _, v := range res {
+		val, err := manage.ManageSensorDataCache().Get(ctx, v.Id)
+		if err != nil {
+			// return nil, 0, err
+			continue
+		}
+		v.Value = val.Value
+		v.DataTime = val.CreateTime
+	}
 	return
 }
 
@@ -97,6 +108,34 @@ func (s *sSensor) Save(ctx context.Context, in *req.ManageSensorSave) (id int64,
 		return 0, err
 	}
 	id, err = rs.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	// 构建子查询
+	var server *res.ServerInfo
+	if err = NewManageServer().Model(ctx).
+		InnerJoin("manage_device", "manage_server.id = manage_device.server_id").
+		Where("manage_device.id", in.DeviceId).
+		Fields("manage_server.*").
+		Scan(&server); err != nil {
+		return 0, err
+	}
+
+	// 处理不同的服务器类型的传感器或字段数据 // opc的
+	if server.Type == gateway.SERVER_OPC {
+		device.Unit = server.Extend.Get("unit").String()
+		client, ok := global.DeviceGateway.Client(server.Id)
+		if !ok {
+			return 0, fmt.Errorf("获取服务器失败")
+		}
+		g := gjson.New(nil, false)
+		g.Set("id", id)
+		g.Set("nodeId", server.Extend.Get("nodeId").String())
+		g.Set("deviceId", in.DeviceId)
+		client.AddNodes()
+	}
+
 	return
 }
 
@@ -210,5 +249,13 @@ func (s *sSensor) ReadEchart(ctx context.Context, re *model.PageListReq, in *req
 		}
 	}
 
+	return
+}
+
+func (s *sSensor) getSensorNow(ctx context.Context, sensorId int64) (out *common.SensorToInfluxdb, err error) {
+	// val, err := manage.ManageSensorDataCache().Get(ctx, sensorId)
+	// if err != nil {
+	// 	return
+	// }
 	return
 }

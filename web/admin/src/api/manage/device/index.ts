@@ -61,7 +61,10 @@ export default {
             }
         })
     },
-    saveSensorInfo(data: SensorRow[]) {
+    saveSensorInfo(data: {
+        deviceId?: number;
+        sensors?: SensorRow[]
+    }) {
         return http({
             url: "/manage/device/saveSensorInfo",
             method: "post",

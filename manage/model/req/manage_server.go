@@ -7,9 +7,10 @@ import (
 )
 
 type ManageServerSearch struct {
-	Name string `json:"name" description:"服务器名称"` // 服务器名称
-	Ip   string `json:"ip" description:"服务器IP"`   // 服务器IP
-	Type string `json:"type" description:"服务器类型"` // 服务器类型
+	Name      string  `json:"name" description:"服务器名称"`       // 服务器名称
+	Ip        string  `json:"ip" description:"服务器IP"`         // 服务器IP
+	Type      string  `json:"type" description:"服务器类型"`       // 服务器类型
+	DeviceIds []int64 `json:"deviceIds" description:"设备ID列表"` // 设备ID列表
 }
 
 type ManageServerSave struct {

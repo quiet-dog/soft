@@ -139,6 +139,13 @@ func (s *sServer) Save(ctx context.Context, in *req.ManageServerSave) (id int64,
 		return
 	}
 
+	if in.Type == gateway.SERVER_OPC {
+		_, err = manage.ManageOpc().InitOpc(ctx, id, "")
+		if err != nil {
+			return
+		}
+	}
+
 	// 测试是否连通
 	_, err = global.DeviceGateway.AddClient(id, gateway.Config{
 		Type:    in.Type,
@@ -151,9 +158,6 @@ func (s *sServer) Save(ctx context.Context, in *req.ManageServerSave) (id int64,
 		s.Delete(ctx, []int64{id})
 	}
 
-	if in.Type == gateway.SERVER_OPC {
-		_, err = manage.ManageOpc().InitOpc(ctx, id, "")
-	}
 	return
 }
 

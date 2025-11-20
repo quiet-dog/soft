@@ -7,8 +7,8 @@ import { DeviceControlRow } from '@/api/manage/device-control/types';
 import { Message } from '@arco-design/web-vue';
 import ImportModel from "@/components/import-model/index.vue";
 import ModelPreview from "@/components/model-preview/index.vue";
-import Fields from "@/package/fields/index.vue"
-
+import Fields from "@/package/fields/index.vue";
+import NowData from "@/components/now-data/index.vue"
 
 const {
   crud, columns, crudRef,
@@ -21,6 +21,7 @@ const importModelRef = ref<InstanceType<typeof ImportModel>>()
 const deviceControlRef = ref<InstanceType<typeof DeviceControl>>()
 const modelPreviewRef = ref<InstanceType<typeof ModelPreview>>()
 const fieldsRef = ref<InstanceType<typeof Fields>>()
+const nowDataRef = ref<InstanceType<typeof NowData>>()
 function selectOperation(val: string, id: number) {
   if (val == "deviceControl") {
     deviceControlRef.value?.open(id)
@@ -30,6 +31,8 @@ function selectOperation(val: string, id: number) {
     modelPreviewRef.value?.open(id)
   } else if (val == "sensorControl") {
     fieldsRef.value?.open(id)
+  } else if (val == "nowDataModel") {
+    nowDataRef.value?.open(id)
   }
 }
 
@@ -94,6 +97,7 @@ function selectControl(val: number) {
             <a-doption value="deviceControl" v-auth="['manage:deviceControl:save']">设备控制</a-doption>
             <a-doption value="importModel" v-auth="['manage:device:importModel']">导入模型</a-doption>
             <a-doption value="previewModel" v-auth="['manage:device:previewModel']">查看模型</a-doption>
+            <a-doption value="nowDataModel" v-auth="['manage:device:nowData']">当前数据</a-doption>
           </template>
         </a-dropdown>
       </template>
@@ -103,6 +107,7 @@ function selectControl(val: number) {
     <ImportModel ref="importModelRef" />
     <ModelPreview ref="modelPreviewRef" />
     <Fields ref="fieldsRef" />
+    <NowData ref="nowDataRef" />
   </div>
 </template>
 

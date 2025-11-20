@@ -155,7 +155,32 @@ func (s *sOpc) InitOpc(ctx context.Context, serverId int64, rootId string) (resu
 	}
 
 	endpoint := fmt.Sprintf("opc.tcp://%s:%s", server.Ip, server.Port)
-	c, err := opcua.NewClient(endpoint)
+	opts := []opcua.Option{}
+
+	if err != nil {
+		return nil, fmt.Errorf("获取服务器失败: %w", err)
+	}
+	if server.Type == gateway.SERVER_OPC {
+		if server.Extend.Get("policy").String() == "None" {
+			opts = append(opts, opcua.SecurityPolicy("None"))
+		} else if server.Extend.Get("policy").String() == "Basic128Rsa15" {
+			opts = append(opts, opcua.SecurityPolicy(ua.SecurityPolicyURIBasic128Rsa15))
+		} else if server.Extend.Get("policy").String() == "Basic256" {
+			opts = append(opts, opcua.SecurityPolicy(ua.SecurityPolicyURIBasic256))
+		} else if server.Extend.Get("policy").String() == "Basic256Sha256" {
+			opts = append(opts, opcua.SecurityPolicy(ua.SecurityPolicyURIBasic256Sha256))
+		}
+		if server.Extend.Get("mode").String() == "None" {
+			opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeNone))
+		} else if server.Extend.Get("mode").String() == "Sign" {
+			opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeSign))
+		} else if server.Extend.Get("mode").String() == "SignAndEncrypt" {
+			opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeSignAndEncrypt))
+		} else {
+			opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeNone))
+		}
+	}
+	c, err := opcua.NewClient(endpoint, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create OPC UA client: %w", err)
 	}
@@ -171,6 +196,7 @@ func (s *sOpc) InitOpc(ctx context.Context, serverId int64, rootId string) (resu
 	id, err := ua.ParseNodeID(rootId)
 	if err != nil {
 		log.Fatalf("invalid node id: %s", err)
+		os.Exit(0)
 		return nil, fmt.Errorf("失效的Id:%s", err)
 	}
 
@@ -238,8 +264,7 @@ func (s *sOpc) Save(ctx context.Context, in *device.OpcTree, serverId int64, par
 	}
 
 	if exits == nil && device.Id > 0 {
-		fmt.Println("==========", serverId, parentId, in.NodeId)
-		os.Exit(0)
+
 		// 更新已有节点
 		_, err = s.Model(ctx).WherePri(device.Id).Update(device)
 		if err != nil {
@@ -438,6 +463,9 @@ func (s *sOpc) browse(ctx context.Context, n *opcua.Node, path string, level int
 	case ua.StatusOK:
 		def.NodeClass = ua.NodeClass(attrs[0].Value.Int())
 	default:
+		fmt.Println("1")
+		fmt.Println(err.Error())
+		os.Exit(0)
 		return nil, err
 	}
 
@@ -446,6 +474,9 @@ func (s *sOpc) browse(ctx context.Context, n *opcua.Node, path string, level int
 	case ua.StatusOK:
 		def.BrowseName = attrs[1].Value.String()
 	default:
+		fmt.Println("2")
+		fmt.Println(err.Error())
+		os.Exit(0)
 		return nil, err
 	}
 
@@ -455,6 +486,9 @@ func (s *sOpc) browse(ctx context.Context, n *opcua.Node, path string, level int
 	case ua.StatusBadAttributeIDInvalid:
 		// ignore
 	default:
+		fmt.Println("3")
+		fmt.Println(err.Error())
+		os.Exit(0)
 		return nil, err
 	}
 
@@ -465,6 +499,9 @@ func (s *sOpc) browse(ctx context.Context, n *opcua.Node, path string, level int
 	case ua.StatusBadAttributeIDInvalid:
 		// ignore
 	default:
+		fmt.Println("4")
+		fmt.Println(err.Error())
+		os.Exit(0)
 		return nil, err
 	}
 
@@ -501,6 +538,9 @@ func (s *sOpc) browse(ctx context.Context, n *opcua.Node, path string, level int
 	case ua.StatusBadAttributeIDInvalid:
 		// ignore
 	default:
+		fmt.Println("5")
+		fmt.Println(err.Error())
+		os.Exit(0)
 		return nil, err
 	}
 
@@ -508,6 +548,9 @@ func (s *sOpc) browse(ctx context.Context, n *opcua.Node, path string, level int
 	case ua.StatusOK:
 		def.DisplayName = attrs[5].Value.String()
 	default:
+		fmt.Println("6")
+		fmt.Println(err.Error())
+		os.Exit(0)
 		return nil, err
 	}
 
@@ -523,6 +566,9 @@ func (s *sOpc) browse(ctx context.Context, n *opcua.Node, path string, level int
 		for _, rn := range refs {
 			childNode, err := s.browse(ctx, rn, def.Path, level+1)
 			if err != nil {
+				fmt.Println("7")
+				fmt.Println(err.Error())
+				os.Exit(0)
 				return fmt.Errorf("browse children: %s", err)
 			}
 			if childNode != nil {

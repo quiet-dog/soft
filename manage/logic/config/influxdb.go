@@ -155,7 +155,8 @@ func (s *sInfluxdb) Store(ctx context.Context, data gateway.Value, sensorId int6
 }
 
 func (s *sInfluxdb) StoreDataChannel(ctx context.Context, msg gateway.Msg) (err error) {
-	// 存储redis
+	fmt.Println("===========接受数据============", msg.Value)
+	// 存储redis 存储未经转换的数据
 	manage.ManageSensorDataCache().Store(ctx, msg.Value.ID, msg.Value)
 
 	// 是否报警

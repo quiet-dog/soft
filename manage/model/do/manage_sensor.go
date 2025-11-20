@@ -25,4 +25,5 @@ type ManageSensor struct {
 	DeletedAt    *gtime.Time // 删除时间
 	Remark       interface{} // 备注
 	Template     interface{} //
+	Unit         interface{} // 单位
 }

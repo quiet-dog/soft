@@ -159,8 +159,16 @@ func (s *sDevice) ReadSensorInfo(ctx context.Context, deviceId int64) (info *res
 	return
 }
 
-func (s sDevice) SaveSensorInfo(ctx context.Context, r []*req.ManageSensorSave) (err error) {
-	for _, v := range r {
+func (s sDevice) SaveSensorInfo(ctx context.Context, r *req.DeviceSensorInfoSaveReq) (err error) {
+	if r == nil {
+		return nil
+	}
+
+	if len(r.Sensors) == 0 {
+		NewManageSensor().Model(ctx).Where("device_id", r.DeviceId).Delete()
+	}
+
+	for _, v := range r.Sensors {
 		fmt.Println(v.Extend.Get("id"))
 		_, err = NewManageSensor().Save(ctx, v)
 		if utils.IsError(err) {

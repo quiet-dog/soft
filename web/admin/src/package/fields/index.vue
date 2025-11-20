@@ -25,12 +25,16 @@ const columns = reactive([{
     slotName: 'extend'
 }])
 const data = ref<SensorRow[]>([])
+const dataLength = ref(0)
 
 function open(deviceId: number) {
     device.readSensorInfo(deviceId).then(res => {
         console.log("deviceInfo", deviceInfo.value)
         deviceInfo.value = res.data
         data.value = res.data?.sensors!
+        if (Array.isArray(res.data?.sensors)) {
+            dataLength.value = res.data?.sensors.length
+        }
         visible.value = true
     }).catch(err => {
 
@@ -43,12 +47,47 @@ function changeExtend(value, index: number) {
 
 // 提交信息
 function handleConfirm(done) {
-    device.saveSensorInfo(data.value).then(res => {
+    device.saveSensorInfo({
+        sensors: data.value,
+        deviceId: deviceInfo.value?.id
+    }).then(res => {
         Message.success("配置成功")
         done(true)
     }).catch(err => {
         Message.error("配置失败")
     })
+}
+
+function changeDataLength(val) {
+    console.log("data.value", data.value)
+    if (data.value == null || data.value == undefined) {
+        data.value = []
+    }
+    if (val > data.value.length) {
+        const need = val - data.value.length;
+        for (let i = 0; i < need; i++) {
+            let extend;
+            if (deviceInfo.value?.server?.type == "opc") {
+                extend = {
+                    id: 0,
+                    nodeId: ""
+                }
+            }
+            data.value.push({
+                id: 0,
+                deviceId: deviceInfo.value?.id!,
+                name: "",
+                unit: "",
+                template: "",
+                remark: "",
+                sensorTypeId: 0,
+                extend: extend
+            });
+        }
+    } else if (val < data.value.length) {
+        // 删掉多余的
+        data.value.splice(val);
+    }
 }
 
 
@@ -59,6 +98,7 @@ defineExpose({
 
 <template>
     <AModal :on-before-ok="handleConfirm" v-model:visible="visible" title="节点配置">
+        <AInputNumber @change="changeDataLength" v-model="dataLength" :default-value="dataLength" mode="button" />
         <ATable :columns="columns" :data="data">
             <template #name="{ rowIndex }">
                 <AInput v-model="data[rowIndex].name" />

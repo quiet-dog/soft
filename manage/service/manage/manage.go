@@ -59,7 +59,7 @@ type (
 		TestConnect(ctx context.Context, in *req.DeviceTestConnectReq) (err error)
 		ImportModel(ctx context.Context, in *req.DeviceImportModelReq) (err error)
 		ReadSensorInfo(ctx context.Context, deviceId int64) (info *res.DeviceSensorInfo, err error)
-		SaveSensorInfo(ctx context.Context, r []*req.ManageSensorSave) (err error)
+		SaveSensorInfo(ctx context.Context, r *req.DeviceSensorInfoSaveReq) (err error)
 		// GetOpc(ctx context.Context, deviceId int64) (opc *res.OpcInfo, err error)
 	}
 

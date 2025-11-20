@@ -21,5 +21,5 @@ export default {
                 nodeId: nodeId
             }
         })
-    }
+    },
 }

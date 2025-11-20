@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"slices"
 	"sync"
 	"time"
@@ -39,34 +40,41 @@ func (c *OpcClient) TestPing() (err error) {
 	defer cancel()
 
 	endpointURL := fmt.Sprintf("opc.tcp://%s:%s", c.conf.Host, c.conf.Port)
-
-	endpoints, err := opcua.GetEndpoints(ctx, endpointURL)
-	if err != nil {
-		log.Printf("[ERROR] 获取 OPC UA 服务器端点失败: %v", err)
-		return
+	opts := []opcua.Option{}
+	if c.conf.Extend.Get("policy").String() == "None" {
+		opts = append(opts, opcua.SecurityPolicy("None"))
+	} else if c.conf.Extend.Get("policy").String() == "Basic128Rsa15" {
+		opts = append(opts, opcua.SecurityPolicy("Basic128Rsa15"))
+	} else if c.conf.Extend.Get("policy").String() == "Basic256" {
+		opts = append(opts, opcua.SecurityPolicy("Basic256"))
+	} else if c.conf.Extend.Get("policy").String() == "Basic256Sha256" {
+		opts = append(opts, opcua.SecurityPolicy("Basic256Sha256"))
+	} else if c.conf.Extend.Get("policy").String() == "Aes128Sha256RsaOaep" {
+		opts = append(opts, opcua.SecurityPolicy("Aes128Sha256RsaOaep"))
 	}
 
-	ep, err := opcua.SelectEndpoint(endpoints, "", ua.MessageSecurityModeNone)
-	if err != nil {
-		log.Printf("[ERROR] 选择端点失败: %v", err)
-		return
+	if c.conf.Extend.Get("mode").String() == "None" {
+		opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeNone))
+	} else if c.conf.Extend.Get("mode").String() == "Sign" {
+		opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeSign))
+	} else if c.conf.Extend.Get("mode").String() == "SignAndEncrypt" {
+		opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeSignAndEncrypt))
+	} else {
+		opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeNone))
+
 	}
 
-	opts := []opcua.Option{
-		opcua.SecurityPolicy("None"),
-		opcua.SecurityMode(ua.MessageSecurityModeNone),
-		opcua.AuthAnonymous(),
-		opcua.SecurityFromEndpoint(ep, ua.UserTokenTypeAnonymous),
-	}
-
-	client, err := opcua.NewClient(ep.EndpointURL, opts...)
+	client, err := opcua.NewClient(endpointURL, opts...)
 
 	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(0)
 		return
 	}
 
 	if err = client.Connect(ctx); err != nil {
 		log.Printf("[ERROR] 连接 OPC UA 服务器失败: %v", err)
+		os.Exit(0)
 		return
 	}
 	defer client.Close(ctx)
@@ -82,41 +90,56 @@ func (c *OpcClient) connectAndSubscribeOnce(channel chan Value) (err error) {
 	c.ctx = ctx
 	c.cancel = cancel
 
-	endpoints, err := opcua.GetEndpoints(ctx, fmt.Sprintf("opc.tcp://%s:%s", c.conf.Host, c.conf.Port))
-	if err != nil {
-		return
-	}
-	ep, err := opcua.SelectEndpoint(endpoints, "", ua.MessageSecurityModeFromString(""))
-	if err != nil {
-		return
+	url := fmt.Sprintf("opc.tcp://%s:%s", c.conf.Host, c.conf.Port)
+
+	// 优先选择安全性最高的端点，如果不行再降级
+
+	opts := []opcua.Option{}
+
+	if c.conf.Extend.Get("policy").String() == "None" {
+		opts = append(opts, opcua.SecurityPolicy("None"))
+	} else if c.conf.Extend.Get("policy").String() == "Basic128Rsa15" {
+		opts = append(opts, opcua.SecurityPolicy("Basic128Rsa15"))
+	} else if c.conf.Extend.Get("policy").String() == "Basic256" {
+		opts = append(opts, opcua.SecurityPolicy("Basic256"))
+	} else if c.conf.Extend.Get("policy").String() == "Basic256Sha256" {
+		opts = append(opts, opcua.SecurityPolicy("Basic256Sha256"))
+	} else if c.conf.Extend.Get("policy").String() == "Aes128Sha256RsaOaep" {
+		opts = append(opts, opcua.SecurityPolicy("Aes128Sha256RsaOaep"))
 	}
 
-	opts := []opcua.Option{
-		opcua.SecurityPolicy(c.conf.Extend.Get("policy").String()),
-		opcua.SecurityModeString(c.conf.Extend.Get("mode").String()),
-		opcua.CertificateFile(c.conf.Extend.Get("certPath").String()),
-		opcua.PrivateKeyFile(c.conf.Extend.Get("keyPath").String()),
-		// opcua.AuthAnonymous(),
-		// opcua.SecurityFromEndpoint(ep, ua.UserTokenTypeAnonymous),
+	if c.conf.Extend.Get("mode").String() == "None" {
+		opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeNone))
+	} else if c.conf.Extend.Get("mode").String() == "Sign" {
+		opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeSign))
+	} else if c.conf.Extend.Get("mode").String() == "SignAndEncrypt" {
+		opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeSignAndEncrypt))
+	} else {
+		opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeNone))
 	}
-
 	username := c.conf.Extend.Get("username").String()
 	password := c.conf.Extend.Get("password").String()
 
 	fmt.Println(c.conf.Extend.Get("policy").String(), c.conf.Extend.Get("mode").String(), c.conf.Extend.Get("certPath").String(), c.conf.Extend.Get("keyPath").String())
 	if username != "" && password != "" {
-		opts = append(opts, opcua.AuthUsername(username, password), opcua.SecurityFromEndpoint(ep, ua.UserTokenTypeUserName))
+		// opts = append(opts, opcua.AuthUsername(username, password), opcua.SecurityFromEndpoint(url, ua.UserTokenTypeUserName))
 	} else {
-		opts = append(opts, opcua.AuthAnonymous(), opcua.SecurityFromEndpoint(ep, ua.UserTokenTypeAnonymous))
+		// opts = append(opts, opcua.AuthAnonymous(), opcua.SecurityFromEndpoint(ep, ua.UserTokenTypeAnonymous))
 	}
 
-	client, err := opcua.NewClient(ep.EndpointURL, opts...)
+	client, err := opcua.NewClient(url, opts...)
 	if err != nil {
+		fmt.Println("1")
+		fmt.Println(err.Error())
+		os.Exit(0)
 		return
 	}
 
 	c.client = client
 	if err = client.Connect(ctx); err != nil {
+		fmt.Println("2")
+		fmt.Println(err.Error())
+		os.Exit(0)
 		return
 	}
 
@@ -124,6 +147,9 @@ func (c *OpcClient) connectAndSubscribeOnce(channel chan Value) (err error) {
 
 	m, err := monitor.NewNodeMonitor(client)
 	if err != nil {
+		fmt.Println("3")
+		fmt.Println(err.Error())
+		os.Exit(0)
 		return
 	}
 
@@ -188,7 +214,10 @@ func (c *OpcClient) startChanSub(ctx context.Context, m *monitor.NodeMonitor, in
 	}
 	sub, err := m.ChanSubscribe(ctx, &opcua.SubscriptionParameters{Interval: interval}, ch, nodes...)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("4")
+		fmt.Println(err.Error())
+		os.Exit(0)
+
 	}
 	c.sub = sub
 	defer cleanup(ctx, sub)

@@ -22,6 +22,7 @@ type ManageSensorSave struct {
 	Extend       *gjson.Json `json:"extend" v:"required" description:"扩展信息"`               // 扩展信息
 	Template     string      `json:"template" description:"模板内容"`
 	Remark       string      `json:"remark" description:"备注"` // 备注
+	Unit         string      `json:"unit" description:"单位"`   // 单位
 }
 
 type ManageSensorDelete struct {
