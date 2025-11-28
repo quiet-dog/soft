@@ -1,8 +1,10 @@
 export interface ThresholdRow {
-    sensorId: number;
-    alarmLabelId: number;
-    sort: number;
-    template: string;
+    sensorId?: number;
+    alarmLabelId?: number;
+    sort?: number;
+    template?: string;
+    level?: string;
+    color?: string;
 }
 
 

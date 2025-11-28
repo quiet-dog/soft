@@ -8,7 +8,8 @@ import { Message } from '@arco-design/web-vue';
 import ImportModel from "@/components/import-model/index.vue";
 import ModelPreview from "@/components/model-preview/index.vue";
 import Fields from "@/package/fields/index.vue";
-import NowData from "@/components/now-data/index.vue"
+import NowData from "@/components/now-data/index.vue";
+import AlarmControl from "@/components/alarm-control/index.vue";
 
 const {
   crud, columns, crudRef,
@@ -22,6 +23,7 @@ const deviceControlRef = ref<InstanceType<typeof DeviceControl>>()
 const modelPreviewRef = ref<InstanceType<typeof ModelPreview>>()
 const fieldsRef = ref<InstanceType<typeof Fields>>()
 const nowDataRef = ref<InstanceType<typeof NowData>>()
+const alarmControlRef = ref<InstanceType<typeof AlarmControl>>();
 function selectOperation(val: string, id: number) {
   if (val == "deviceControl") {
     deviceControlRef.value?.open(id)
@@ -33,6 +35,8 @@ function selectOperation(val: string, id: number) {
     fieldsRef.value?.open(id)
   } else if (val == "nowDataModel") {
     nowDataRef.value?.open(id)
+  }else if (val == "alarmControl") {
+    alarmControlRef.value?.open(id)
   }
 }
 
@@ -94,6 +98,7 @@ function selectControl(val: number) {
           <a-link><icon-double-right /> 更多</a-link>
           <template #content>
             <a-doption value="sensorControl" v-auth="['manage:sensorControl:save']">信息配置</a-doption>
+            <a-doption value="alarmControl" v-auth="['manage:alarm:save']">报警配置</a-doption>
             <a-doption value="deviceControl" v-auth="['manage:deviceControl:save']">设备控制</a-doption>
             <a-doption value="importModel" v-auth="['manage:device:importModel']">导入模型</a-doption>
             <a-doption value="previewModel" v-auth="['manage:device:previewModel']">查看模型</a-doption>
@@ -108,6 +113,7 @@ function selectControl(val: number) {
     <ModelPreview ref="modelPreviewRef" />
     <Fields ref="fieldsRef" />
     <NowData ref="nowDataRef" />
+    <AlarmControl ref="alarmControlRef" />
   </div>
 </template>
 

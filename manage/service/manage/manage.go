@@ -60,6 +60,8 @@ type (
 		ImportModel(ctx context.Context, in *req.DeviceImportModelReq) (err error)
 		ReadSensorInfo(ctx context.Context, deviceId int64) (info *res.DeviceSensorInfo, err error)
 		SaveSensorInfo(ctx context.Context, r *req.DeviceSensorInfoSaveReq) (err error)
+		GetSensorAlarmList(ctx context.Context, deviceId int64) (sensors []*res.SensorAlarmRow, err error)
+		SaveSensorAlarmList(ctx context.Context, deviceId int64, sensors []*res.SensorAlarmRow) (err error)
 		// GetOpc(ctx context.Context, deviceId int64) (opc *res.OpcInfo, err error)
 	}
 
@@ -80,10 +82,11 @@ type (
 		ReadInfluxdbFormat(ctx context.Context, sensorId int64) (out *common.SensorToInfluxdb, err error)
 		Read(ctx context.Context, sensorId int64) (sensorInfo *res.SensorInfo, err error)
 		ReadEchart(ctx context.Context, re *model.PageListReq, in *req.ManageInfluxdbOneSensorSearch) (out *res.SensorEchart, err error)
+		ReadHistoryData(ctx context.Context, r *model.PageListReq, in *req.ManageInfluxdbOneSensorSearch) (result *res.SensorDataList, err error)
 	}
 
 	IManageOpc interface {
-		InitOpc(ctx context.Context, serverId int64, id string) (result *gateway.NodeDef, err error)
+		InitOpc(ctx context.Context, serverId int64) (result *gateway.NodeDef, err error)
 		Tree(ctx context.Context, in *req.OpcTreeReq) (rs []*res.OpcTree, err error)
 		ReadData(ctx context.Context, opcId int64) (rs *common.TemplateEnv, err error)
 		Read(ctx context.Context, opcId int64) (opcInfo *res.OpcInfo, err error)
@@ -142,6 +145,7 @@ type (
 		Read(ctx context.Context, alarmId int64) (alarmInfo *res.AlarmInfo, err error)
 		GetPageListForSearch(ctx context.Context, req *model.PageListReq, in *req.ManageAlarmSearch) (res []*res.AlarmTableRow, total int, err error)
 		Delete(ctx context.Context, ids []int64) (err error)
+		LiftAlarm(ctx context.Context, alarmId int64) (err error)
 	}
 
 	IManageDeviceControl interface {

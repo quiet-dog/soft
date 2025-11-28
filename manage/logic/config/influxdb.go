@@ -94,6 +94,7 @@ func (s *sInfluxdb) SearchSensorEchart(ctx context.Context, re *model.PageListRe
 
 func (s *sInfluxdb) SearchTable(ctx context.Context, req *model.PageListReq, in *req.ManageInfluxdbSearch) (list []map[string]interface{}, total int64, err error) {
 	line, totalLine := s.handleInfluxdbSearch(ctx, req, in)
+	fmt.Println("line", line)
 	c, err := s.Model(context.Background())
 	if err != nil {
 		fmt.Println("Failed to create InfluxDB client:", err)
@@ -119,6 +120,22 @@ func (s *sInfluxdb) SearchTable(ctx context.Context, req *model.PageListReq, in 
 
 }
 
+func (s *sInfluxdb) SearchTableBySensorId(ctx context.Context, r *model.PageListReq, in *req.ManageInfluxdbSearch) (list []map[string]interface{}, total int64, err error) {
+	sensorInfo, err := manage.ManageSensor().Read(ctx, in.SensorId)
+	if err != nil {
+		return
+	}
+
+	in.SensorIds = []int64{in.SensorId}
+	in.DeviceId = sensorInfo.DeviceId
+	list, total, err = s.SearchTable(ctx, r, in)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
 func (s *sInfluxdb) Store(ctx context.Context, data gateway.Value, sensorId int64) (err error) {
 	c, err := s.Model(context.Background())
 	if err != nil {
@@ -135,7 +152,6 @@ func (s *sInfluxdb) Store(ctx context.Context, data gateway.Value, sensorId int6
 
 		return
 	}
-	fmt.Println("====================", influxdbData.Template)
 
 	current := influxdbData.Template.ToValueInfluxdbFloat64(data.Value)
 
@@ -149,7 +165,6 @@ func (s *sInfluxdb) Store(ctx context.Context, data gateway.Value, sensorId int6
 		influxdbData.Template.ToExprValueInfluxdbFloat64(data.Value),
 		data.CreateTime.UnixNano(),
 	)
-	fmt.Println(line)
 	err = c.Write(ctx, []byte(line))
 	return
 }
@@ -157,17 +172,20 @@ func (s *sInfluxdb) Store(ctx context.Context, data gateway.Value, sensorId int6
 func (s *sInfluxdb) StoreDataChannel(ctx context.Context, msg gateway.Msg) (err error) {
 	fmt.Println("===========接受数据============", msg.Value)
 	// 存储redis 存储未经转换的数据
-	manage.ManageSensorDataCache().Store(ctx, msg.Value.ID, msg.Value)
+	NewManageSensorDataCache().Store(ctx, msg.Value.ID, msg.Value)
 
 	// 是否报警
-	manage.ManageEvent().CheckEvent(ctx, msg.Value.ID, msg.Value)
+	NewManageEvent().CheckEvent(ctx, msg.Value.ID, msg.Value)
 
 	{
 		// 第三方的接入
 	}
-
 	// 存储到influxdb
 	err = s.Store(ctx, msg.Value, msg.Value.ID)
+	if err != nil {
+		fmt.Println("Failed to store data to InfluxDB:", err)
+		return
+	}
 
 	return
 }
@@ -204,8 +222,16 @@ func (s *sInfluxdb) handleInfluxdbSearch(ctx context.Context, req *model.PageLis
 	}
 
 	// 时间范围
-	if in.BeginTime != 0 && in.EndTime != 0 {
-		timeCond := fmt.Sprintf("time >= '%s' and time <= '%s'", time.UnixMilli(in.BeginTime).Format(time.RFC3339), time.UnixMilli(in.EndTime).Format(time.RFC3339))
+	if in.BeginTime != 0 {
+		timeCond := fmt.Sprintf("time >= '%s'", time.UnixMilli(in.BeginTime).Format(time.RFC3339))
+		if conditions != "" {
+			conditions += " AND " + timeCond
+		} else {
+			conditions = timeCond
+		}
+	}
+	if in.EndTime != 0 {
+		timeCond := fmt.Sprintf("time <= '%s'", time.UnixMilli(in.EndTime).Format(time.RFC3339))
 		if conditions != "" {
 			conditions += " AND " + timeCond
 		} else {
@@ -237,6 +263,5 @@ func (s *sInfluxdb) handleInfluxdbSearch(ctx context.Context, req *model.PageLis
 	fmt.Println("InfluxDB Query Line:==========================")
 	fmt.Println("InfluxDB Query Line:", line)
 	fmt.Println("InfluxDB Total Query Line:", total)
-	// os.Exit(0)
 	return
 }

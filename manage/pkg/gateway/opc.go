@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"slices"
 	"sync"
 	"time"
@@ -68,13 +67,11 @@ func (c *OpcClient) TestPing() (err error) {
 
 	if err != nil {
 		fmt.Println(err.Error())
-		os.Exit(0)
 		return
 	}
 
 	if err = client.Connect(ctx); err != nil {
 		log.Printf("[ERROR] 连接 OPC UA 服务器失败: %v", err)
-		os.Exit(0)
 		return
 	}
 	defer client.Close(ctx)
@@ -131,7 +128,6 @@ func (c *OpcClient) connectAndSubscribeOnce(channel chan Value) (err error) {
 	if err != nil {
 		fmt.Println("1")
 		fmt.Println(err.Error())
-		os.Exit(0)
 		return
 	}
 
@@ -139,7 +135,6 @@ func (c *OpcClient) connectAndSubscribeOnce(channel chan Value) (err error) {
 	if err = client.Connect(ctx); err != nil {
 		fmt.Println("2")
 		fmt.Println(err.Error())
-		os.Exit(0)
 		return
 	}
 
@@ -149,7 +144,6 @@ func (c *OpcClient) connectAndSubscribeOnce(channel chan Value) (err error) {
 	if err != nil {
 		fmt.Println("3")
 		fmt.Println(err.Error())
-		os.Exit(0)
 		return
 	}
 
@@ -216,7 +210,6 @@ func (c *OpcClient) startChanSub(ctx context.Context, m *monitor.NodeMonitor, in
 	if err != nil {
 		fmt.Println("4")
 		fmt.Println(err.Error())
-		os.Exit(0)
 
 	}
 	c.sub = sub

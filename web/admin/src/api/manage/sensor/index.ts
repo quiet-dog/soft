@@ -1,6 +1,6 @@
 import { http } from "@/utils/http";
 import { BaseIds, Page, TreeLeaf } from "../base";
-import { InfluxdbData, ReadData, ReadSensorEchart, SensorEchart, SensorEdit, SensorRow, SensorSearch, TemplateEnv, Translate } from "./types";
+import { InfluxdbData, ReadData, ReadHistory, ReadSensorEchart, SensorData, SensorEchart, SensorEdit, SensorRow, SensorSearch, TemplateEnv, Translate } from "./types";
 import qs from "qs"
 
 export default {
@@ -71,6 +71,13 @@ export default {
             url: '/manage/sensor/readEchart',
             method: "post",
             data,
+        })
+    },
+    readHistoryData: (data: ReadHistory) => {
+        return http<SensorData>({
+            url: '/manage/sensor/readHistoryData',
+            method: "get",
+            params: data
         })
     }
 }

@@ -76,7 +76,6 @@ func (s *sEvent) CheckEvent(ctx context.Context, sensorId int64, value gateway.V
 
 	eV, err := template.ToExprValueFloat64(value.Value)
 	if err != nil {
-		fmt.Println("=============数值转换失败===========", err)
 		return
 	}
 
@@ -88,52 +87,94 @@ func (s *sEvent) CheckEvent(ctx context.Context, sensorId int64, value gateway.V
 		}
 
 		// 判断是否报警
-		if aAlarmTemplate.IsAlarm(eV) {
-			var labelInfo *res.AlarmLabelInfo
-			labelInfo, err = manage.ManageAlarmLabel().Read(ctx, v.AlarmLabelId)
-			if err != nil {
-				return
-			}
-
-			page := model.PageListReq{}
-			page.Page = 1
-			page.PageSize = 1
-			var alarms []*res.AlarmTableRow
-			alarms, _, err = manage.ManageAlarm().GetPageListForSearch(ctx, &page, &req.ManageAlarmSearch{
-				SensorId: sensorId,
-				IsLift:   false,
-				Level:    labelInfo.Level,
-			})
-			if err != nil {
-				return
-			}
-
-			var alarmId int64
-			if len(alarms) > 0 {
-				alarmId = alarms[0].Id
-			} else {
-				alarmId, err = manage.ManageAlarm().Save(ctx, req.ManageAlarmSave{
-					IsLift:   false,
-					Level:    labelInfo.Level,
-					SensorId: sensorId,
-					Color:    labelInfo.Color,
-				})
-				if err != nil {
-					return
-				}
-			}
-
-			_, err = s.Save(ctx, &req.ManageEventReq{
-				SensorId:    sensorId,
-				Value:       eV,
-				Level:       labelInfo.Level,
-				Color:       labelInfo.Color,
-				Desctiption: "",
-				AlarmId:     alarmId,
-			})
-			break
+		if aAlarmTemplate.IsAlarmFloat64(eV) {
+			// 是否更新事件还是插入事件
+			s.floatInsertOrUpdateEvent(ctx, v.AlarmLabelId, sensorId, eV, value.CreateTime.UnixMilli())
+		} else {
+			// 是否需要解除
+			s.floatLiftAlarm(ctx, v.AlarmLabelId, sensorId, eV)
 		}
+	}
 
+	return
+}
+
+// 判断浮点是是否插入或更新报警事件
+func (s *sEvent) floatInsertOrUpdateEvent(ctx context.Context, alarmLabelId int64, sensorId int64, value float64, timeSamp int64) (err error) {
+
+	var labelInfo *res.AlarmLabelInfo
+	labelInfo, err = manage.ManageAlarmLabel().Read(ctx, alarmLabelId)
+	if err != nil {
+		return
+	}
+
+	page := model.PageListReq{}
+	page.Page = 1
+	page.PageSize = 1
+	var alarms []*res.AlarmTableRow
+	alarms, _, err = manage.ManageAlarm().GetPageListForSearch(ctx, &page, &req.ManageAlarmSearch{
+		SensorId: sensorId,
+		IsLift:   "0",
+		Level:    labelInfo.Level,
+	})
+	if err != nil {
+		return
+	}
+	// var alarmId int64
+	if len(alarms) > 0 {
+		// alarmId = alarms[0].Id
+	} else {
+		_, err = manage.ManageAlarm().Save(ctx, req.ManageAlarmSave{
+			IsLift:   false,
+			Level:    labelInfo.Level,
+			SensorId: sensorId,
+			Color:    labelInfo.Color,
+			SendTime: timeSamp,
+		})
+		if err != nil {
+			return
+		}
+	}
+
+	// // 存储事件
+	// _, err = s.Save(ctx, &req.ManageEventReq{
+	// 	SensorId:    sensorId,
+	// 	Value:       value,
+	// 	Level:       labelInfo.Level,
+	// 	Color:       labelInfo.Color,
+	// 	Description: "",
+	// 	AlarmId:     alarmId,
+	// })
+	return
+}
+
+// 判断浮点是是否需要解除报警
+func (s *sEvent) floatLiftAlarm(ctx context.Context, alarmLabelId int64, sensorId int64, value float64) (err error) {
+
+	var labelInfo *res.AlarmLabelInfo
+	labelInfo, err = manage.ManageAlarmLabel().Read(ctx, alarmLabelId)
+	if err != nil {
+		return
+	}
+
+	page := model.PageListReq{}
+	page.Page = 1
+	page.PageSize = 1
+	var alarms []*res.AlarmTableRow
+	alarms, _, err = manage.ManageAlarm().GetPageListForSearch(ctx, &page, &req.ManageAlarmSearch{
+		SensorId: sensorId,
+		IsLift:   "0",
+		Level:    labelInfo.Level,
+	})
+	if err != nil {
+		return
+	}
+	var alarmId int64
+	if len(alarms) > 0 {
+		alarmId = alarms[0].Id
+	}
+	if alarmId > 0 {
+		NewManageAlarm().LiftAlarm(ctx, alarmId)
 	}
 
 	return

@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"math"
-	"os"
 	"sync"
 	"time"
 
@@ -45,7 +44,6 @@ func main() {
 	}, eh)
 	if err != nil {
 		fmt.Printf("failed to create server: %v\n", err)
-		os.Exit(1)
 	}
 
 	// start accepting client connections
@@ -53,7 +51,6 @@ func main() {
 	err = server.Start()
 	if err != nil {
 		fmt.Printf("failed to start server: %v\n", err)
-		os.Exit(1)
 	}
 
 	// increment a 32-bit uptime counter every second.

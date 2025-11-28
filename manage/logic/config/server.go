@@ -140,8 +140,9 @@ func (s *sServer) Save(ctx context.Context, in *req.ManageServerSave) (id int64,
 	}
 
 	if in.Type == gateway.SERVER_OPC {
-		_, err = manage.ManageOpc().InitOpc(ctx, id, "")
+		_, err = manage.ManageOpc().InitOpc(ctx, id)
 		if err != nil {
+			s.Delete(ctx, []int64{id})
 			return
 		}
 	}

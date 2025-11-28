@@ -10,5 +10,21 @@ export default {
             params
         })
     },
+    // 报警解除
+    lift(id: number) {
+        return http({
+            url: "/manage/alarm/lift",
+            method: "post",
+            data: {
+                id: id
+            }
+        })
+    },
+    read(id: number) {
+        return http<AlarmRow>({
+            url: "/manage/alarm/read/" + id,
+            method: "get"
+        })
+    }
 
 }

@@ -1,7 +1,7 @@
 import { http } from "@/utils/http";
 import { BaseIds, Page, TreeLeaf } from "../base";
 import { DeviceEdit, DeviceInfo, DeviceRead, DeviceRow, DeviceSearch, DeviceTest } from "./types";
-import { SensorRow } from "../sensor/types";
+import { SensorAlarmRow, SensorRow } from "../sensor/types";
 
 export default {
     list: (params: DeviceSearch) => {
@@ -68,6 +68,23 @@ export default {
         return http({
             url: "/manage/device/saveSensorInfo",
             method: "post",
+            data
+        })
+    },
+    // 获取传感器报警列表
+    getSensorAlarmList(deviceId: number) {
+        return http<SensorAlarmRow[]>({
+            url: '/manage/device/getSensorAlarmList/' + deviceId,
+            method: 'get',
+        })
+    },
+    saveSensorAlarmList(data: {
+        sensors?: SensorAlarmRow[]
+        deviceId?: number
+    }) {
+        return http({
+            url: '/manage/device/saveSensorAlarmList',
+            method: 'post',
             data
         })
     }

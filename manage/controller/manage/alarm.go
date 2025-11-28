@@ -51,3 +51,19 @@ func (c *alarmController) DeleteAlarm(ctx context.Context, in *manage.DeleteAlar
 	err = sManage.ManageAlarm().Delete(ctx, in.Ids)
 	return
 }
+
+func (c *alarmController) LiftAlarm(ctx context.Context, in *manage.LiftAlarmReq) (out *manage.LiftAlarmRes, err error) {
+	out = &manage.LiftAlarmRes{}
+	err = sManage.ManageAlarm().LiftAlarm(ctx, in.Id)
+	return
+}
+
+func (c *alarmController) ReadAlarm(ctx context.Context, in *manage.ReadAlarmReq) (out *manage.ReadAlarmRes, err error) {
+	out = &manage.ReadAlarmRes{}
+	alarmInfo, err := sManage.ManageAlarm().Read(ctx, in.Id)
+	if err != nil {
+		return
+	}
+	out.Data = alarmInfo
+	return
+}

@@ -8,7 +8,7 @@ type AlarmTemplate struct {
 	Template string
 }
 
-func (a *AlarmTemplate) IsAlarm(value float64) bool {
+func (a *AlarmTemplate) IsAlarmFloat64(value float64) bool {
 	pre := map[string]interface{}{
 		"value": value,
 	}

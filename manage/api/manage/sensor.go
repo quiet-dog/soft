@@ -122,3 +122,15 @@ type ReadEchartSensorRes struct {
 	g.Meta `mime:"application/json"`
 	Data   *res.SensorEchart `json:"data" dc:"服务信息"`
 }
+
+type ReadHistoryDataSensorReq struct {
+	g.Meta `path:"/sensor/readHistoryData" method:"get" tags:"传感器" summary:"获取传感器历史数据" x-permission:"system:readHistoryData:read"`
+	model.AuthorHeader
+	model.PageListReq
+	req.ManageInfluxdbOneSensorSearch
+}
+
+type ReadHistoryDataSensorRes struct {
+	g.Meta `mime:"application/json"`
+	Data   *res.SensorDataList `json:"data" dc:"传感器历史数据"`
+}

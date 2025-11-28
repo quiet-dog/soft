@@ -13,8 +13,10 @@ import (
 	"devinggo/modules/system/pkg/orm"
 	"devinggo/modules/system/pkg/utils"
 	websocket2 "devinggo/modules/system/pkg/websocket"
+	"time"
 
 	"github.com/gogf/gf/v2/database/gdb"
+	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/util/gconv"
 )
 
@@ -92,8 +94,36 @@ func (s *sAlarm) sendMsg(ctx context.Context, alarmId int64) {
 	websocket2.PublishIdMessage(ctx, toId, clientIdWResponse)
 }
 
+// 报警解除
+func (s *sAlarm) LiftAlarm(ctx context.Context, alarmId int64) (err error) {
+	_, err = s.Model(ctx).Where(dao.ManageAlarm.Columns().Id, alarmId).Data(g.Map{
+		dao.ManageAlarm.Columns().IsLift:  true,
+		dao.ManageAlarm.Columns().EndTime: time.Now().UnixMilli(),
+	}).Update()
+	if utils.IsError(err) {
+		return err
+	}
+	return
+}
+
 func (s *sAlarm) handleAlarmSearch(ctx context.Context, in *req.ManageAlarmSearch) *gdb.Model {
 	m := s.Model(ctx)
+
+	if in.SensorId > 0 {
+		m = m.Where(dao.ManageAlarm.Columns().SensorId, in.SensorId)
+	}
+
+	if in.IsLift != "" {
+		if in.IsLift == "1" {
+			m = m.Where(dao.ManageAlarm.Columns().IsLift, 1)
+		} else {
+			m = m.Where(dao.ManageAlarm.Columns().IsLift, 0)
+		}
+	}
+
+	if in.Level != "" {
+		m = m.Where(dao.ManageAlarm.Columns().Level, in.Level)
+	}
 
 	return m
 }

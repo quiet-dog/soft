@@ -100,6 +100,7 @@ func (s *sSensor) Save(ctx context.Context, in *req.ManageSensorSave) (id int64,
 	var rs sql.Result
 	if in.Id > 0 {
 		rs, err = s.Model(ctx).Data(device).Save()
+
 	} else {
 		rs, err = s.Model(ctx).Data(device).Insert()
 	}
@@ -219,11 +220,13 @@ func (s *sSensor) ReadInfluxdbFormat(ctx context.Context, sensorId int64) (out *
 }
 
 func (s *sSensor) Read(ctx context.Context, sensorId int64) (sensorInfo *res.SensorInfo, err error) {
+
 	sensorInfo = &res.SensorInfo{}
 	err = s.Model(ctx).Where(dao.ManageSensor.Columns().Id, sensorId).Scan(&sensorInfo)
 	if utils.IsError(err) {
 		return
 	}
+
 	return
 }
 
@@ -247,6 +250,66 @@ func (s *sSensor) ReadEchart(ctx context.Context, re *model.PageListReq, in *req
 		if tt, ok := v["time"].(time.Time); ok {
 			out.XData = append(out.XData, tt.UTC().Format("2006-01-02 15:04:05"))
 		}
+	}
+
+	return
+}
+
+// 读取历史数据
+func (s *sSensor) ReadHistoryData(ctx context.Context, r *model.PageListReq, in *req.ManageInfluxdbOneSensorSearch) (result *res.SensorDataList, err error) {
+
+	result = &res.SensorDataList{}
+
+	sensorInfo, err := s.Read(ctx, in.SensorId)
+
+	if err != nil {
+		return
+	}
+
+	result.SensorId = sensorInfo.Id
+	result.SensorName = sensorInfo.Name
+	result.SensorTypeId = sensorInfo.SensorTypeId
+	result.SensorTypeName = sensorInfo.SensorTypeName
+	result.SensorUnit = sensorInfo.Unit
+	result.DeviceId = sensorInfo.DeviceId
+
+	result.Rows, result.Total, err = NewManageInfluxdb().SearchTable(ctx, r, &req.ManageInfluxdbSearch{
+		DeviceId:  sensorInfo.DeviceId,
+		SensorIds: []int64{in.SensorId},
+		BeginTime: in.BeginTime,
+		EndTime:   in.EndTime,
+		Precision: in.Precision,
+	})
+
+	// 对结果进行阈值处理
+	for i, v := range result.Rows {
+		key := fmt.Sprintf("c_%d", in.SensorId)
+		value := v[key]
+
+		if value != nil {
+			thresholds, err := NewManageThresholdCache().Get(ctx, in.SensorId)
+			if err != nil {
+				continue
+			}
+			influxdbData, err := manage.ManageSensor().ReadInfluxdbFormat(ctx, in.SensorId)
+			if err != nil {
+				continue
+			}
+			for _, threshold := range thresholds {
+				aAlarmTemplate := common.AlarmTemplate{
+					Template: threshold.Template,
+				}
+				floatValue, err := influxdbData.Template.ToValueFloat64(value)
+				if err != nil {
+					continue
+				}
+				if aAlarmTemplate.IsAlarmFloat64(floatValue) {
+					result.Rows[i]["level"] = threshold.Level
+					result.Rows[i]["color"] = threshold.Color
+				}
+			}
+		}
+
 	}
 
 	return

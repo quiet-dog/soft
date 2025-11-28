@@ -22,4 +22,6 @@ type ManageAlarm struct {
 	Level     interface{} //
 	SensorId  interface{} // 传感器Id
 	Color     interface{} // 颜色
+	EndTime   interface{} // 解除报警时间
+	SendTime  interface{} // 触发时间
 }

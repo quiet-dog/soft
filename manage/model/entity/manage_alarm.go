@@ -20,4 +20,6 @@ type ManageAlarm struct {
 	Level     string      `json:"level"     orm:"level"      description:""`       //
 	SensorId  int64       `json:"sensorId"  orm:"sensor_id"  description:"传感器Id"`  // 传感器Id
 	Color     string      `json:"color"     orm:"color"      description:"颜色"`     // 颜色
+	EndTime   int64       `json:"endTime"   orm:"end_time"   description:"解除报警时间"` // 解除报警时间
+	SendTime  int64       `json:"sendTime"  orm:"send_time"  description:"触发时间"`   // 触发时间
 }

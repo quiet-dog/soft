@@ -14,6 +14,7 @@ type ExprEnv struct {
 	Value interface{} `json:"value" expr:"value"`
 }
 
+// 不经转换的值转换为float64
 func (t *ExprTemplate) ToValueFloat64(value any) (result float64, err error) {
 	vType := reflect.TypeOf(value)
 	switch vType.Kind() {
@@ -23,6 +24,10 @@ func (t *ExprTemplate) ToValueFloat64(value any) (result float64, err error) {
 		return float64(value.(uint)), nil
 	case reflect.Float32, reflect.Float64:
 		return value.(float64), nil
+	// case reflect.String:
+	// 	return value.(string), nil
+	// case reflect.Bool:
+	// return value.(bool), nil
 	default:
 		return 0, fmt.Errorf("result is not a numeric type, got %T", value)
 	}
@@ -31,6 +36,20 @@ func (t *ExprTemplate) ToValueFloat64(value any) (result float64, err error) {
 
 // 根据expr模板转换为float64
 func (t *ExprTemplate) ToExprValueFloat64(value any) (result float64, err error) {
+	if *t == "" {
+		// 如果value是数值类型的话直接返回
+		vType := reflect.TypeOf(value)
+		switch vType.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			return float64(value.(int)), nil
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			return float64(value.(uint)), nil
+		case reflect.Float32, reflect.Float64:
+			return value.(float64), nil
+		default:
+			return 0, fmt.Errorf("result is not a numeric type, got %T", value)
+		}
+	}
 
 	env := ExprEnv{
 		Value: value,
@@ -104,9 +123,9 @@ func (t *ExprTemplate) ToExprValue(value any) (result any, err error) {
 func (t *ExprTemplate) ToValueInfluxdbFloat64(value any) string {
 	v, err := t.ToValueFloat64(value)
 	if err != nil {
-		return fmt.Sprintf("%fi", 0.0)
+		return fmt.Sprintf("%f", 0.0)
 	}
-	return fmt.Sprintf("%fi", v)
+	return fmt.Sprintf("%f", v)
 }
 
 func (t *ExprTemplate) ToExprValueInfluxdb(value any) string {

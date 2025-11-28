@@ -1,5 +1,6 @@
 import { BaseId, BasePageReq } from "../base";
 import sensorType from '@/api/manage/sensorType';
+import { ThresholdRow } from "../threshold/types";
 
 export interface SensorAdd {
     name: string;
@@ -21,6 +22,11 @@ export interface SensorRow extends BaseRow, SensorEdit {
 }
 
 export interface SensorSearch extends SensorAdd, BasePageReq {
+}
+
+
+export interface SensorAlarmRow extends SensorRow {
+    thresholds: ThresholdRow[]
 }
 
 
@@ -81,4 +87,24 @@ export interface SensorEchart {
     xData: string[];
     eSeiresData: number[];
     cSeiresData: number[];
+}
+
+
+export interface ReadHistory extends BasePageReq {
+    sensorId?: number;
+    beginTime?: number;
+    endTime?: number;
+}
+
+
+export interface InfluxdbRow {
+    [key: string]: any;
+    sensor: string;
+    time: string
+}
+export interface SensorData extends SensorRow {
+    rows: InfluxdbRow[];
+    total: number;
+    sensorUnit?: string;
+    sensorName?: string;
 }

@@ -52,3 +52,24 @@ type DeleteAlarmReq struct {
 type DeleteAlarmRes struct {
 	g.Meta `mime:"application/json"`
 }
+
+type LiftAlarmReq struct {
+	g.Meta `path:"/alarm/lift" tags:"Alarm" method:"post" summary:"解除报警" x-permission:"manage:alarm:lift"`
+	model.AuthorHeader
+	Id int64 `json:"id" description:"报警ID" v:"required#报警ID不能为空"`
+}
+
+type LiftAlarmRes struct {
+	g.Meta `mime:"application/json"`
+}
+
+type ReadAlarmReq struct {
+	g.Meta `path:"/alarm/read/{Id}" method:"get" tags:"Alarm" summary:"获取报警信息" x-permission:"manage:alarm:read"`
+	model.AuthorHeader
+	Id int64 `json:"id" description:"报警ID" v:"required#报警ID不能为空"`
+}
+
+type ReadAlarmRes struct {
+	g.Meta `mime:"application/json"`
+	Data   *res.AlarmInfo `json:"data" dc:"报警信息"`
+}

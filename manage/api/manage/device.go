@@ -116,3 +116,25 @@ type DeviceSaveSensorInfoReq struct {
 type DeviceSaveSensorInfoRes struct {
 	g.Meta `mime:"application/json"`
 }
+
+type GetSensorAlarmListReq struct {
+	g.Meta `path:"/device/getSensorAlarmList/{Id}" method:"get" tags:"设备" summary:"获取设备传感器报警列表." x-permission:"system:device:getSensorAlarmList"`
+	model.AuthorHeader
+	Id int64 `json:"id" dc:"岗位 id" v:"required|min:1#设备Id不能为空"`
+}
+
+type GetSensorAlarmListRes struct {
+	g.Meta `mime:"application/json"`
+	Data   []*res.SensorAlarmRow `json:"data" dc:"设备传感器报警列表"`
+}
+
+type SaveSensorAlarmListReq struct {
+	g.Meta `path:"/device/saveSensorAlarmList" method:"post" tags:"设备" summary:"保存设备传感器报警列表." x-permission:"system:device:saveSensorAlarmList"`
+	model.AuthorHeader
+	Sensors  []*res.SensorAlarmRow `json:"sensors" dc:"设备传感器报警列表"`
+	DeviceId int64                 `json:"deviceId" dc:"设备Id"`
+}
+
+type SaveSensorAlarmListRes struct {
+	g.Meta `mime:"application/json"`
+}

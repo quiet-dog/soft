@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"time"
 
 	"github.com/gogf/gf/v2/database/gdb"
@@ -142,102 +141,6 @@ func (s *sOpc) saveTreeRecursive(ctx context.Context, tree *device.OpcTree, serv
 		}
 	}
 	return nil
-}
-
-func (s *sOpc) InitOpc(ctx context.Context, serverId int64, rootId string) (result *gateway.NodeDef, err error) {
-	if rootId == "" {
-		rootId = "i=84"
-	}
-
-	var server *res.ServerTableRow
-	if err = dao.ManageServer.Ctx(ctx).WherePri(serverId).Scan(&server); err != nil {
-		return
-	}
-
-	endpoint := fmt.Sprintf("opc.tcp://%s:%s", server.Ip, server.Port)
-	opts := []opcua.Option{}
-
-	if err != nil {
-		return nil, fmt.Errorf("获取服务器失败: %w", err)
-	}
-	if server.Type == gateway.SERVER_OPC {
-		if server.Extend.Get("policy").String() == "None" {
-			opts = append(opts, opcua.SecurityPolicy("None"))
-		} else if server.Extend.Get("policy").String() == "Basic128Rsa15" {
-			opts = append(opts, opcua.SecurityPolicy(ua.SecurityPolicyURIBasic128Rsa15))
-		} else if server.Extend.Get("policy").String() == "Basic256" {
-			opts = append(opts, opcua.SecurityPolicy(ua.SecurityPolicyURIBasic256))
-		} else if server.Extend.Get("policy").String() == "Basic256Sha256" {
-			opts = append(opts, opcua.SecurityPolicy(ua.SecurityPolicyURIBasic256Sha256))
-		}
-		if server.Extend.Get("mode").String() == "None" {
-			opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeNone))
-		} else if server.Extend.Get("mode").String() == "Sign" {
-			opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeSign))
-		} else if server.Extend.Get("mode").String() == "SignAndEncrypt" {
-			opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeSignAndEncrypt))
-		} else {
-			opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeNone))
-		}
-	}
-	c, err := opcua.NewClient(endpoint, opts...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create OPC UA client: %w", err)
-	}
-
-	if err = c.Connect(ctx); err != nil {
-		return nil, fmt.Errorf("连接opc服务器错误: %w", err)
-	}
-
-	defer c.Close(context.Background())
-
-	// 获取全部节点
-
-	id, err := ua.ParseNodeID(rootId)
-	if err != nil {
-		log.Fatalf("invalid node id: %s", err)
-		os.Exit(0)
-		return nil, fmt.Errorf("失效的Id:%s", err)
-	}
-
-	// 获取全部节点
-	nodeList, err := s.browse(ctx, c.Node(id), "", 0)
-	if err != nil {
-		return nil, fmt.Errorf("获取节点失败%s", err)
-	}
-
-	// 保存节点信息
-	err = s.saveDB(ctx, serverId, 0, nodeList)
-	return nodeList, err
-	// 先打印 NamespaceArray，确认索引和URI
-	// nsNode := c.Node(ua.NewNumericNodeID(0, 2255))
-	// val, err := nsNode.Value(context.Background())
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// namespaces, ok := val.Value().([]string)
-	// if !ok {
-	// 	return nil, fmt.Errorf("expected []string but got %T", val)
-	// }
-	// fmt.Println("Namespaces:")
-
-	// for i, ns := range namespaces {
-	// 	fmt.Printf("  %d: %s\n", i, ns)
-	// 	objectsNode := ua.NewNumericNodeID(0, 85)
-	// 	visited := make(map[string]bool)
-	// 	nodeTree := browseNamespaceTree(c, objectsNode, visited, uint16(i), objectsNode.String())
-	// 	result = append(result, nodeTree)
-	// 	err = s.saveTreeRecursive(ctx, nodeTree, serverId, 0, func(ot *device.OpcTree, i1, i2 int64) (int64, error) {
-	// 		id, err := s.Save(ctx, ot, i1, i2)
-	// 		return id, err
-	// 	})
-	// 	if err != nil {
-	// 		return result, fmt.Errorf("保存节点树失败: %w", err)
-	// 	}
-	// }
-
-	return
 }
 
 func (s *sOpc) Save(ctx context.Context, in *device.OpcTree, serverId int64, parentId int64) (id int64, err error) {
@@ -430,6 +333,91 @@ func (s *sOpc) OpcNodeIsExit(ctx context.Context, in *req.OpcReadByServer) (rs i
 
 const maxDepth = 10
 
+// 初始化opc设备树
+func (s *sOpc) InitOpc(ctx context.Context, serverId int64) (result *gateway.NodeDef, err error) {
+
+	var server *res.ServerTableRow
+	if err = dao.ManageServer.Ctx(ctx).WherePri(serverId).Scan(&server); err != nil {
+		return
+	}
+
+	endpoint := fmt.Sprintf("opc.tcp://%s:%s", server.Ip, server.Port)
+	// 连接opc服务器
+	c, err := s.connect(ctx, server, endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("连接opc服务器失败: %w", err)
+	}
+
+	// 获取全部节点
+	rootNode := ua.NewNumericNodeID(0, id.ObjectsFolder)
+	// 获取全部节点
+	nodeList, err := s.browse(ctx, c, rootNode, "", 0)
+	if err != nil {
+		return nil, fmt.Errorf("获取节点失败%s", err)
+	}
+
+	// 保存节点信息
+	err = s.saveDB(ctx, serverId, 0, nodeList)
+	return nodeList, err
+}
+
+func (s *sOpc) connect(ctx context.Context, server *res.ServerTableRow, endpoint string) (c *opcua.Client, err error) {
+
+	opts := []opcua.Option{}
+
+	var policy string
+	var model ua.MessageSecurityMode
+	if server.Type == gateway.SERVER_OPC {
+		if server.Extend.Get("policy").String() == "None" {
+			policy = ua.SecurityPolicyURINone
+			opts = append(opts, opcua.SecurityPolicy("None"))
+		} else if server.Extend.Get("policy").String() == "Basic128Rsa15" {
+			policy = ua.SecurityPolicyURIBasic128Rsa15
+			opts = append(opts, opcua.SecurityPolicy("Basic128Rsa15"))
+		} else if server.Extend.Get("policy").String() == "Basic256" {
+			policy = ua.SecurityPolicyURIBasic256
+			opts = append(opts, opcua.SecurityPolicy("Basic256"))
+		} else if server.Extend.Get("policy").String() == "Basic256Sha256" {
+			policy = ua.SecurityPolicyURIBasic256Sha256
+			opts = append(opts, opcua.SecurityPolicy("Basic256Sha256"))
+		}
+		if server.Extend.Get("mode").String() == "None" {
+			model = ua.MessageSecurityModeNone
+			opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeNone))
+		} else if server.Extend.Get("mode").String() == "Sign" {
+			model = ua.MessageSecurityModeSign
+			opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeSign))
+		} else if server.Extend.Get("mode").String() == "SignAndEncrypt" {
+			model = ua.MessageSecurityModeSignAndEncrypt
+			opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeSignAndEncrypt))
+		} else {
+			model = ua.MessageSecurityModeNone
+			opts = append(opts, opcua.SecurityMode(ua.MessageSecurityModeNone))
+		}
+	}
+	endponits, err := opcua.GetEndpoints(ctx, endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("获取端点失败: %w", err)
+	}
+
+	ep, err := opcua.SelectEndpoint(endponits, policy, model)
+	if err != nil {
+		return nil, fmt.Errorf("选择端点失败: %w", err)
+	}
+	ep.EndpointURL = endpoint
+
+	c, err = opcua.NewClient(ep.EndpointURL, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create OPC UA client: %w", err)
+	}
+
+	if err = c.Connect(ctx); err != nil {
+		return nil, fmt.Errorf("连接opc服务器失败: %w", err)
+	}
+
+	return
+}
+
 func join(a, b string) string {
 	if a == "" {
 		return b
@@ -438,12 +426,13 @@ func join(a, b string) string {
 }
 
 // 遍历获取所有节点
-func (s *sOpc) browse(ctx context.Context, n *opcua.Node, path string, level int) (*gateway.NodeDef, error) {
+func (s *sOpc) browse(ctx context.Context, client *opcua.Client, n *ua.NodeID, path string, level int) (*gateway.NodeDef, error) {
 	if level > maxDepth {
 		return nil, nil
 	}
 
-	attrs, err := n.Attributes(ctx,
+	node := client.Node(n)
+	attrs, err := node.Attributes(ctx,
 		ua.AttributeIDNodeClass,
 		ua.AttributeIDBrowseName,
 		ua.AttributeIDDescription,
@@ -456,7 +445,7 @@ func (s *sOpc) browse(ctx context.Context, n *opcua.Node, path string, level int
 	}
 
 	def := &gateway.NodeDef{
-		NodeID: n.ID,
+		NodeID: node.ID,
 	}
 
 	switch err := attrs[0].Status; err {
@@ -465,7 +454,6 @@ func (s *sOpc) browse(ctx context.Context, n *opcua.Node, path string, level int
 	default:
 		fmt.Println("1")
 		fmt.Println(err.Error())
-		os.Exit(0)
 		return nil, err
 	}
 
@@ -476,7 +464,6 @@ func (s *sOpc) browse(ctx context.Context, n *opcua.Node, path string, level int
 	default:
 		fmt.Println("2")
 		fmt.Println(err.Error())
-		os.Exit(0)
 		return nil, err
 	}
 
@@ -488,7 +475,6 @@ func (s *sOpc) browse(ctx context.Context, n *opcua.Node, path string, level int
 	default:
 		fmt.Println("3")
 		fmt.Println(err.Error())
-		os.Exit(0)
 		return nil, err
 	}
 
@@ -501,7 +487,6 @@ func (s *sOpc) browse(ctx context.Context, n *opcua.Node, path string, level int
 	default:
 		fmt.Println("4")
 		fmt.Println(err.Error())
-		os.Exit(0)
 		return nil, err
 	}
 
@@ -540,7 +525,6 @@ func (s *sOpc) browse(ctx context.Context, n *opcua.Node, path string, level int
 	default:
 		fmt.Println("5")
 		fmt.Println(err.Error())
-		os.Exit(0)
 		return nil, err
 	}
 
@@ -550,7 +534,6 @@ func (s *sOpc) browse(ctx context.Context, n *opcua.Node, path string, level int
 	default:
 		fmt.Println("6")
 		fmt.Println(err.Error())
-		os.Exit(0)
 		return nil, err
 	}
 
@@ -559,16 +542,15 @@ func (s *sOpc) browse(ctx context.Context, n *opcua.Node, path string, level int
 	// 遍历子节点
 	def.Children = []*gateway.NodeDef{}
 	browseChildren := func(refType uint32) error {
-		refs, err := n.ReferencedNodes(ctx, refType, ua.BrowseDirectionForward, ua.NodeClassAll, true)
+		refs, err := node.ReferencedNodes(ctx, refType, ua.BrowseDirectionForward, ua.NodeClassAll, true)
 		if err != nil {
 			return fmt.Errorf("References: %d: %s", refType, err)
 		}
 		for _, rn := range refs {
-			childNode, err := s.browse(ctx, rn, def.Path, level+1)
+			childNode, err := s.browse(ctx, client, rn.ID, def.Path, level+1)
 			if err != nil {
 				fmt.Println("7")
 				fmt.Println(err.Error())
-				os.Exit(0)
 				return fmt.Errorf("browse children: %s", err)
 			}
 			if childNode != nil {

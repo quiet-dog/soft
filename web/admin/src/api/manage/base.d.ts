@@ -33,6 +33,8 @@ export interface BaseRow {
     created_at: string;
     updated_by: number;
     updated_at: string;
+    updatedAt?: string;
+    createdAt?: string;
     id: number;
 }
 

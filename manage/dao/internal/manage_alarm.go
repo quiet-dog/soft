@@ -31,6 +31,8 @@ type ManageAlarmColumns struct {
 	Level     string //
 	SensorId  string // 传感器Id
 	Color     string // 颜色
+	EndTime   string // 解除报警时间
+	SendTime  string // 触发时间
 }
 
 // manageAlarmColumns holds the columns for the table manage_alarm.
@@ -45,6 +47,8 @@ var manageAlarmColumns = ManageAlarmColumns{
 	Level:     "level",
 	SensorId:  "sensor_id",
 	Color:     "color",
+	EndTime:   "end_time",
+	SendTime:  "send_time",
 }
 
 // NewManageAlarmDao creates and returns a new DAO object for table data access.

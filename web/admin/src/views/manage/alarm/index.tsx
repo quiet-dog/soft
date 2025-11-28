@@ -14,13 +14,13 @@ export function useAlarmHook() {
         { title: "报警编号", dataIndex: 'id', },
         { title: "报警等级", dataIndex: 'level' },
         { title: "传感器名称", dataIndex: 'sensorId' },
-        { title: "创建时间", dataIndex: "createdAt", },
+        { title: "报警状态", dataIndex: "isLift" },
+        { title: "报警时间", dataIndex: "createdAt", },
     ])
 
     const crudRef = ref()
 
     const loadMore = (record, done) => {
-        console.log("=====", record)
         // @ts-ignore
         event.list({
             page: 1,

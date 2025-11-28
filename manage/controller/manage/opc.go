@@ -18,7 +18,7 @@ type opcController struct {
 func (c *opcController) InitOpc(ctx context.Context, in *manage.InitOpcReq) (out *manage.InitOpcRes, err error) {
 	out = &manage.InitOpcRes{}
 	// Initialize OPC connection and fetch namespace tree
-	out.Data, err = sManage.ManageOpc().InitOpc(ctx, in.ServerId, "")
+	out.Data, err = sManage.ManageOpc().InitOpc(ctx, in.ServerId)
 	return
 }
 

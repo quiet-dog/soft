@@ -5,6 +5,7 @@ import (
 	"devinggo/manage/dao"
 	"devinggo/manage/model/do"
 	"devinggo/manage/model/req"
+	"devinggo/manage/model/res"
 	"devinggo/manage/service/manage"
 	"devinggo/modules/system/logic/base"
 	"devinggo/modules/system/pkg/hook"
@@ -124,5 +125,16 @@ func (s *sThreshold) AddThreshold(ctx context.Context, in *req.ManageThresholdAd
 func (s *sThreshold) GetSensorThresholds(ctx context.Context, sensorId int64) (out []*req.ThresholdRow, err error) {
 	err = s.Model(ctx).
 		Where(dao.ManageThreshold.Columns().SensorId, sensorId).Scan(&out)
+
+	// 获取对应的阈值标签信息
+	for _, v := range out {
+		var labelInfo *res.AlarmLabelInfo
+		labelInfo, err = manage.ManageAlarmLabel().Read(ctx, v.AlarmLabelId)
+		if err != nil {
+			return
+		}
+		v.Color = labelInfo.Color
+		v.Level = labelInfo.Level
+	}
 	return
 }

@@ -192,6 +192,44 @@ func (s *sDevice) ImportModel(ctx context.Context, req *req.DeviceImportModelReq
 	return
 }
 
+// 获取设备传感器报警列表
+func (s *sDevice) GetSensorAlarmList(ctx context.Context, deviceId int64) (sensors []*res.SensorAlarmRow, err error) {
+	err = NewManageSensor().Model(ctx).Where("device_id", deviceId).Scan(&sensors)
+	if err != nil {
+		return
+	}
+
+	for _, sensor := range sensors {
+		var thresholds []*req.ThresholdRow
+		thresholds, err = NewManageThreshold().GetSensorThresholds(ctx, sensor.Id)
+		if err != nil {
+			return
+		}
+		sensor.Thresholds = thresholds
+	}
+
+	return
+}
+
+func (s *sDevice) SaveSensorAlarmList(ctx context.Context, deviceId int64, sensors []*res.SensorAlarmRow) (err error) {
+
+	thresholdService := NewManageThreshold()
+	// if len(sensors) == 0 {
+	// NewManageSensor().Model(ctx).Where("device_id", deviceId).Delete()
+	// }
+	//  goframe 子查询删除
+	// thresholdService.Model(ctx).Where("sensor_id in (?)", ).Delete()
+	// 创建子sql语句
+	subSql := g.DB().Model("manage_sensor").Where("device_id", deviceId).Fields("id")
+	thresholdService.Model(ctx).Where("sensor_id in ?", subSql).Delete()
+	for _, sensor := range sensors {
+		for _, threshold := range sensor.Thresholds {
+			thresholdService.Save(ctx, threshold)
+		}
+	}
+	return
+}
+
 func (s *sDevice) handleDeviceSearch(ctx context.Context, in *req.ManageDeviceSearch) (query *gdb.Model) {
 	query = s.Model(ctx)
 	if in == nil {

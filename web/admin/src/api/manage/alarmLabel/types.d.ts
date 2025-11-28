@@ -4,7 +4,7 @@ export interface AlarmLabelAdd {
     name: string;
     remark: string;
     color: string;
-    lebel: string;
+    label: string;
 }
 
 
@@ -15,4 +15,5 @@ export interface AlarmLabelEdit extends AlarmLabelAdd, BaseId {
 export interface AlarmLabelRow extends BaseRow, AlarmLabelEdit { }
 
 export interface AlarmLabelSearch extends AlarmLabelAdd, BasePageReq {
+    deviceId?: number;
 }

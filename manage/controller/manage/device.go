@@ -91,3 +91,16 @@ func (c *deviceController) DeviceSaveSensorInfo(ctx context.Context, in *manage.
 	err = sManage.ManageDevice().SaveSensorInfo(ctx, &in.DeviceSensorInfoSaveReq)
 	return
 }
+
+func (c *deviceController) GetSensorAlarmList(ctx context.Context, in *manage.GetSensorAlarmListReq) (out *manage.GetSensorAlarmListRes, err error) {
+	out = &manage.GetSensorAlarmListRes{}
+	out.Data, err = sManage.ManageDevice().GetSensorAlarmList(ctx, in.Id)
+	return
+}
+
+// 保存设备传感器报警列表
+func (c *deviceController) SaveSensorAlarmList(ctx context.Context, in *manage.SaveSensorAlarmListReq) (out *manage.SaveSensorAlarmListRes, err error) {
+	out = &manage.SaveSensorAlarmListRes{}
+	err = sManage.ManageDevice().SaveSensorAlarmList(ctx, in.DeviceId, in.Sensors)
+	return
+}
