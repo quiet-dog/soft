@@ -3,7 +3,7 @@ package gateway
 import (
 	"fmt"
 	"log"
-	"strconv"
+	"slices"
 	"time"
 
 	"github.com/gogf/gf/v2/encoding/gjson"
@@ -124,79 +124,96 @@ func (c *Client) AddNodes(nodes ...*gjson.Json) {
 	}
 
 	if v, ok := c.client.(*ModbusTcpClient); ok {
-		n := []ModbusDevice{}
+
 		for _, node := range nodes {
-			device := ModbusDevice{}
-			sensors := make(map[int64]ModbusSensor)
-			if node.Get("sensors").IsMap() {
-				for k, value := range node.Get("sensors").Map() {
-					if kInt, err := strconv.Atoi(k); err != nil {
-						continue
-					} else {
-						if sV, ok := value.(ModbusSensor); ok {
-							sensors[int64(kInt)] = sV
-						}
-					}
-				}
+
+			deviceId := node.Get("deviceId").Int64()
+			sensorId := node.Get("sensorId").Int64()
+
+			slaveId := node.Get("slaveId").Uint8()
+			startAddress := node.Get("startAddress").Uint16()
+			quantity := node.Get("quantity").Uint16()
+			readType := node.Get("readType").Int64()
+
+			isExitDevice := slices.IndexFunc(v.nodes, func(device *ModbusDevice) bool {
+				return device.DeviceId == deviceId
+			})
+
+			device := &ModbusDevice{}
+			if isExitDevice != -1 {
+				device = v.nodes[isExitDevice]
 			}
-			device.Sensors = sensors
-			device.SlaveId = node.Get("slaveId").Uint16()
-			device.DeviceId = node.Get("deviceId").Int64()
-			n = append(n, device)
+
+			if device.Sensors == nil {
+				device.Sensors = make(map[int64]ModbusSensor)
+			}
+
+			device.Sensors[sensorId] = ModbusSensor{
+				StartAddress: startAddress,
+				Quantity:     quantity,
+				ReadType:     readType,
+				SlaveId:      slaveId,
+				SensorId:     sensorId,
+			}
+
+			if isExitDevice == -1 {
+				v.AddNodes(*device)
+			}
 		}
 
-		v.AddNodes(n...)
+		// fmt.Println(len(n))
+
 	}
 
-	if v, ok := c.client.(*ModbusRtuOverTcpClient); ok {
-		n := []ModbusDevice{}
-		for _, node := range nodes {
-			device := ModbusDevice{}
-			sensors := make(map[int64]ModbusSensor)
-			if node.Get("sensors").IsMap() {
-				for k, value := range node.Get("sensors").Map() {
-					if kInt, err := strconv.Atoi(k); err != nil {
-						continue
-					} else {
-						if sV, ok := value.(ModbusSensor); ok {
-							sensors[int64(kInt)] = sV
-						}
-					}
-				}
-			}
-			device.Sensors = sensors
-			device.SlaveId = node.Get("slaveId").Uint16()
-			device.DeviceId = node.Get("deviceId").Int64()
-			n = append(n, device)
-		}
+	// if v, ok := c.client.(*ModbusRtuOverTcpClient); ok {
+	// 	n := []ModbusDevice{}
+	// 	for _, node := range nodes {
+	// 		device := ModbusDevice{}
+	// 		sensors := make(map[int64]ModbusSensor)
+	// 		if node.Get("sensors").IsMap() {
+	// 			for k, value := range node.Get("sensors").Map() {
+	// 				if kInt, err := strconv.Atoi(k); err != nil {
+	// 					continue
+	// 				} else {
+	// 					if sV, ok := value.(ModbusSensor); ok {
+	// 						sensors[int64(kInt)] = sV
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 		device.Sensors = sensors
+	// 		device.SlaveId = node.Get("slaveId").Uint16()
+	// 		device.DeviceId = node.Get("deviceId").Int64()
+	// 		n = append(n, device)
+	// 	}
 
-		v.AddNodes(n...)
-	}
+	// 	v.AddNodes(n...)
+	// }
 
-	if v, ok := c.client.(*ModbusRtuClient); ok {
-		n := []ModbusDevice{}
-		for _, node := range nodes {
-			device := ModbusDevice{}
-			sensors := make(map[int64]ModbusSensor)
-			if node.Get("sensors").IsMap() {
-				for k, value := range node.Get("sensors").Map() {
-					if kInt, err := strconv.Atoi(k); err != nil {
-						continue
-					} else {
-						if sV, ok := value.(ModbusSensor); ok {
-							sensors[int64(kInt)] = sV
-						}
-					}
-				}
-			}
-			device.Sensors = sensors
-			device.SlaveId = node.Get("slaveId").Uint16()
-			device.DeviceId = node.Get("deviceId").Int64()
-			n = append(n, device)
-		}
+	// if v, ok := c.client.(*ModbusRtuClient); ok {
+	// 	n := []ModbusDevice{}
+	// 	for _, node := range nodes {
+	// 		device := ModbusDevice{}
+	// 		sensors := make(map[int64]ModbusSensor)
+	// 		if node.Get("sensors").IsMap() {
+	// 			for k, value := range node.Get("sensors").Map() {
+	// 				if kInt, err := strconv.Atoi(k); err != nil {
+	// 					continue
+	// 				} else {
+	// 					if sV, ok := value.(ModbusSensor); ok {
+	// 						sensors[int64(kInt)] = sV
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 		device.Sensors = sensors
+	// 		device.SlaveId = node.Get("slaveId").Uint16()
+	// 		device.DeviceId = node.Get("deviceId").Int64()
+	// 		n = append(n, device)
+	// 	}
 
-		v.AddNodes(n...)
-	}
+	// 	v.AddNodes(n...)
+	// }
 }
 
 func (c *Client) IsOnline() bool {

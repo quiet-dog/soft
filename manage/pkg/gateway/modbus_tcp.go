@@ -3,7 +3,6 @@ package gateway
 import (
 	"context"
 	"fmt"
-	"maps"
 	"time"
 
 	"github.com/gogf/gf/v2/encoding/gjson"
@@ -29,6 +28,7 @@ type ModbusSensor struct {
 	Quantity     uint16 `json:"quantity"`
 	SensorId     int64  `json:"sensorId"`
 	ReadType     int64  `json:"readType"`
+	SlaveId      uint8  `json:"slaveId"`
 }
 
 // ModbusDevice 定义设备配置
@@ -120,15 +120,10 @@ func (c *ModbusTcpClient) connectAndSubscribeOnce(channel chan Value) (err error
 	c.timer, err = g.Add(ctx, durationToCron(c.conf.SubTime), func(ctx context.Context) {
 
 		for _, device := range c.nodes {
-			// 设置从站 ID
-			c.client.SetUnitId(uint8(device.SlaveId))
 
+			// 设置从站 ID
 			for _, sensor := range device.Sensors {
-				// 验证寄存器数量
-				// if sensor.Quantity < 2 || sensor.Quantity%2 != 0 {
-				// 	fmt.Printf("无效的寄存器数量: %d (SensorID: %d)\n", sensor.Quantity, sensor.SensorId)
-				// 	continue
-				// }
+				c.client.SetUnitId(uint8(sensor.SlaveId))
 
 				// 选择寄存器类型
 				var regType modbus.RegType
@@ -146,14 +141,8 @@ func (c *ModbusTcpClient) connectAndSubscribeOnce(channel chan Value) (err error
 				// 读取寄存器
 				rs, err := c.client.ReadRegisters(sensor.StartAddress, sensor.Quantity, regType)
 				if err != nil {
-					fmt.Printf("读取寄存器失败 (SlaveId: %d) (SensorID: %d) (StartAddress: %d) (Quantity: %d) (RegType: %d) (URL: %s) (ReadType: %d): %v\n", device.SlaveId, sensor.SensorId, sensor.StartAddress, sensor.Quantity, regType, fmt.Sprintf("tcp://%s:%s", c.conf.Host, c.conf.Port), sensor.ReadType, err)
-					continue
-				}
 
-				fmt.Printf("读取的寄存器数量: %d (SensorID: %d)\n", len(rs), sensor.SensorId)
-				if len(rs) != int(sensor.Quantity) {
-					fmt.Printf("读取的寄存器数量不匹配: 期望 %d, 实际 %d (SensorID: %d)\n",
-						sensor.Quantity, len(rs), sensor.SensorId)
+					fmt.Printf("读取寄存器失败 (SlaveId: %d) (SensorID: %d) (StartAddress: %d) (Quantity: %d) (RegType: %d) (URL: %s) (ReadType: %d): %v\n", device.SlaveId, sensor.SensorId, sensor.StartAddress, sensor.Quantity, regType, fmt.Sprintf("tcp://%s:%s", c.conf.Host, c.conf.Port), sensor.ReadType, err)
 					continue
 				}
 
@@ -192,12 +181,13 @@ func (c *ModbusTcpClient) connectAndSubscribeOnce(channel chan Value) (err error
 
 // AddNodes 添加设备节点
 func (c *ModbusTcpClient) AddNodes(devices ...ModbusDevice) {
+
 	for _, v := range devices {
+
 		var isDeviceExit bool
 		for _, vv := range c.nodes {
 			if v.DeviceId == vv.DeviceId {
 				isDeviceExit = true
-				maps.Copy(vv.Sensors, v.Sensors)
 			}
 		}
 		if !isDeviceExit {

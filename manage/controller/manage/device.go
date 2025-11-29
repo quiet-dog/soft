@@ -104,3 +104,16 @@ func (c *deviceController) SaveSensorAlarmList(ctx context.Context, in *manage.S
 	err = sManage.ManageDevice().SaveSensorAlarmList(ctx, in.DeviceId, in.Sensors)
 	return
 }
+
+func (c *deviceController) GetSensorNow(ctx context.Context, in *manage.GetSensorNowReq) (out *manage.GetSensorNowRes, err error) {
+	out = &manage.GetSensorNowRes{}
+	out.Data, err = sManage.ManageDevice().GetSensorNow(ctx, in.Id)
+	return
+}
+
+func (c *deviceController) GetPageListForSearchHaveSensors(ctx context.Context, in *manage.GetPageListForSearchHaveSensorsReq) (out *manage.GetPageListForSearchHaveSensorsRes, err error) {
+	out = &manage.GetPageListForSearchHaveSensorsRes{}
+	out.Data = &res.DeviceSensorInfoTableRow{}
+	out.Data.Rows, out.Data.Total, err = sManage.ManageDevice().GetPageListForSearchHaveSensors(ctx, &in.PageListReq, &in.ManageDeviceSearch)
+	return
+}

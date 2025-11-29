@@ -4,6 +4,7 @@ import { useAlarmHook } from '.';
 import AlarmEventDetail from "@/components/alarm-event-detail/index.vue";
 import alarm from '@/api/manage/alarm';
 import { Message } from '@arco-design/web-vue';
+import dayjs from 'dayjs';
 
 const { crud, columns, crudRef, loadMore } = useAlarmHook()
 const alarmEventDetailRef = ref<InstanceType<typeof AlarmEventDetail>>()
@@ -13,7 +14,7 @@ const alarmEventDetailRef = ref<InstanceType<typeof AlarmEventDetail>>()
 
 function selectOperation(value: "detail", id: number) {
     if (value == "detail") {
-        alarmEventDetailRef.value?.handleOpen([id])
+        alarmEventDetailRef.value?.handleOpen(id)
     } else if (value == "alarmRelease") {
         alarm.lift(id).then(res => {
             Message.success("报警解除成功")
@@ -30,6 +31,14 @@ function selectOperation(value: "detail", id: number) {
     <div class="ma-content-block lg:flex justify-between p-4">
         <ma-crud :options="crud" :columns="columns" ref="crudRef">
 
+            <!-- 报警状态 -->
+             <template #search-isLift="{searchForm,component}">
+                <ASelect v-model="searchForm[component.dataIndex]">
+                    <AOption value="0">报警触发</AOption>
+                    <AOption value="1">报警解除</AOption>
+                </ASelect>
+             </template>
+
 
             <!-- 报警等级 -->
             <template #level="{ record }">
@@ -44,6 +53,11 @@ function selectOperation(value: "detail", id: number) {
                 <a-tag :color="record.isLift ? 'green' : 'red'">
                     {{ record.isLift ? '报警解除' : '报警触发' }}
                 </a-tag>
+            </template>
+
+            <!-- 解除时间 -->
+            <template #endTime="{ record }">
+                <span>{{ record.endTime ? dayjs(Math.floor(record.endTime / 1e6)).format("YYYY-MM-DD HH:mm:ss") : '-' }}</span>
             </template>
             <!-- 操作之后的 -->
             <template #operationAfterExtend="{ record }">

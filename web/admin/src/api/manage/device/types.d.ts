@@ -22,7 +22,17 @@ export interface DeviceRow extends BaseRow, DeviceEdit {
     modelPath?: string;
 }
 
+export interface DeviceRowsHaveSensors extends DeviceRow {
+    sensors: SensorRow[];
+}
+
+export interface GetPageListForSearchHaveSensors {
+    rows: DeviceRowsHaveSensors[];
+    total: number;
+}
+
 export interface DeviceSearch extends DeviceAdd, BasePageReq {
+    areaIds?: number[];
 }
 
 

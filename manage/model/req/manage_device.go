@@ -7,11 +7,12 @@ import (
 )
 
 type ManageDeviceSearch struct {
-	Name                 string `json:"name" description:"设备名称"`                 // 设备名称
-	Manufacturer         string `json:"manufacturer" description:"制造商"`          // 制造商
-	Model                string `json:"model" description:"设备型号"`                // 设备型号
-	InstallationLocation string `json:"installationLocation" description:"安装位置"` // 安装位置
-	ServerId             int64  `json:"serverId" description:"服务器ID"`            // 服务器ID
+	Name                 string  `json:"name" description:"设备名称"`                 // 设备名称
+	Manufacturer         string  `json:"manufacturer" description:"制造商"`          // 制造商
+	Model                string  `json:"model" description:"设备型号"`                // 设备型号
+	InstallationLocation string  `json:"installationLocation" description:"安装位置"` // 安装位置
+	ServerId             int64   `json:"serverId" description:"服务器ID"`            // 服务器ID
+	AreaIds              []int64 `json:"areaIds" description:"区域ID"`              // 区域ID
 }
 
 type ManageDeviceSave struct {

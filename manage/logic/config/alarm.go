@@ -98,7 +98,7 @@ func (s *sAlarm) sendMsg(ctx context.Context, alarmId int64) {
 func (s *sAlarm) LiftAlarm(ctx context.Context, alarmId int64) (err error) {
 	_, err = s.Model(ctx).Where(dao.ManageAlarm.Columns().Id, alarmId).Data(g.Map{
 		dao.ManageAlarm.Columns().IsLift:  true,
-		dao.ManageAlarm.Columns().EndTime: time.Now().UnixMilli(),
+		dao.ManageAlarm.Columns().EndTime: time.Now().UnixNano(),
 	}).Update()
 	if utils.IsError(err) {
 		return err
@@ -124,6 +124,9 @@ func (s *sAlarm) handleAlarmSearch(ctx context.Context, in *req.ManageAlarmSearc
 	if in.Level != "" {
 		m = m.Where(dao.ManageAlarm.Columns().Level, in.Level)
 	}
+
+	// 按照sendTime排序
+	m = m.Order(dao.ManageAlarm.Columns().SendTime, "desc")
 
 	return m
 }

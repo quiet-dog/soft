@@ -76,10 +76,10 @@ func (s *sEvent) CheckEvent(ctx context.Context, sensorId int64, value gateway.V
 
 	eV, err := template.ToExprValueFloat64(value.Value)
 	if err != nil {
+
 		return
 	}
 
-	fmt.Println("=============数值转换成功===========", eV, template, value.Value)
 	// 是否有阈值设置
 	for _, v := range thresholds {
 		aAlarmTemplate := common.AlarmTemplate{
@@ -89,7 +89,7 @@ func (s *sEvent) CheckEvent(ctx context.Context, sensorId int64, value gateway.V
 		// 判断是否报警
 		if aAlarmTemplate.IsAlarmFloat64(eV) {
 			// 是否更新事件还是插入事件
-			s.floatInsertOrUpdateEvent(ctx, v.AlarmLabelId, sensorId, eV, value.CreateTime.UnixMilli())
+			s.floatInsertOrUpdateEvent(ctx, v.AlarmLabelId, sensorId, eV, value.CreateTime.UnixNano())
 		} else {
 			// 是否需要解除
 			s.floatLiftAlarm(ctx, v.AlarmLabelId, sensorId, eV)

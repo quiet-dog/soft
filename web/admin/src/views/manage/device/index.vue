@@ -98,11 +98,11 @@ function selectControl(val: number) {
           <a-link><icon-double-right /> 更多</a-link>
           <template #content>
             <a-doption value="sensorControl" v-auth="['manage:sensorControl:save']">信息配置</a-doption>
+            <a-doption value="nowDataModel" v-auth="['manage:device:nowData']">当前数据</a-doption>
             <a-doption value="alarmControl" v-auth="['manage:alarm:save']">报警配置</a-doption>
             <a-doption value="deviceControl" v-auth="['manage:deviceControl:save']">设备控制</a-doption>
             <a-doption value="importModel" v-auth="['manage:device:importModel']">导入模型</a-doption>
             <a-doption value="previewModel" v-auth="['manage:device:previewModel']">查看模型</a-doption>
-            <a-doption value="nowDataModel" v-auth="['manage:device:nowData']">当前数据</a-doption>
           </template>
         </a-dropdown>
       </template>

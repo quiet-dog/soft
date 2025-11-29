@@ -149,17 +149,15 @@ if (appStore.ws) {
     }
     messageStore.messageList = data.d
   });
+
   // 报警的消息
-  Wsm.ws.on("alarm", (data, ws) => {
-    console.log("aaaaaaa", data)
-    // Notification.warning("触发报警了!!!")
-    error("报警触发",h("div",{
-      innerHTML: "<p>1</p>"
-    }))
-  })
-  Wsm.ws.subscribe("sensor_data", (data, ws) => {
-      console.log("aaaaaaa", data)
-  })
+  // Wsm.ws.on("alarm", (data, ws) => {
+  //   console.log("aaaaaaa", data)
+  //   // Notification.warning("触发报警了!!!")
+  //   error("报警触发",h("div",{
+  //     innerHTML: "<p>1</p>"
+  //   }))
+  // })
 }
 
 </script>

@@ -10,6 +10,7 @@ import (
 	"devinggo/manage/service/manage"
 	"devinggo/modules/system/logic/base"
 	"devinggo/modules/system/model"
+	"devinggo/modules/system/model/page"
 	"devinggo/modules/system/pkg/hook"
 	"devinggo/modules/system/pkg/orm"
 	"devinggo/modules/system/pkg/utils"
@@ -69,6 +70,33 @@ func (s *sDevice) GetPageListForSearch(ctx context.Context, req *model.PageListR
 	err = orm.GetPageList(m, req).ScanAndCount(&res, &total, false)
 	if utils.IsError(err) {
 		return nil, 0, err
+	}
+	return
+}
+
+// 获取设备列表,更加详细,带传感器数据和当前数据
+func (s *sDevice) GetPageListForSearchHaveSensors(ctx context.Context, r *model.PageListReq, in *req.ManageDeviceSearch) (res []*res.DeviceSensorInfo, total int, err error) {
+	m := s.handleDeviceSearch(ctx, in)
+	err = orm.GetPageList(m, r).ScanAndCount(&res, &total, false)
+	if utils.IsError(err) {
+		return nil, 0, err
+	}
+
+	for _, item := range res {
+		item.Sensors, _, err = NewManageSensor().GetPageListForSearch(ctx, &model.PageListReq{}, &req.ManageSensorSearch{
+			DeviceIds: []int64{item.Id},
+		})
+		if utils.IsError(err) {
+			return nil, 0, err
+		}
+		for _, sensor := range item.Sensors {
+			val, err := NewManageSensorDataCache().Get(ctx, sensor.Id)
+			if err != nil {
+				continue
+			}
+			sensor.Value = val.Value
+			sensor.DataTime = val.CreateTime
+		}
 	}
 	return
 }
@@ -147,7 +175,7 @@ func (s *sDevice) ReadSensorInfo(ctx context.Context, deviceId int64) (info *res
 	}
 
 	// 获取对应的传感器
-	res, _, err := NewManageSensor().GetPageListForSearch(ctx, &model.PageListReq{}, &req.ManageSensorSearch{
+	res, _, err := manage.ManageSensor().GetPageListForSearch(ctx, &model.PageListReq{}, &req.ManageSensorSearch{
 		DeviceId: deviceId,
 	})
 	if err != nil {
@@ -230,6 +258,68 @@ func (s *sDevice) SaveSensorAlarmList(ctx context.Context, deviceId int64, senso
 	return
 }
 
+func (s *sDevice) GetSensorNow(ctx context.Context, deviceId int64) (out []*res.SensorInfo, err error) {
+
+	NewManageSensor().Model(ctx).Where("device_id", deviceId).Scan(&out)
+	for _, sensor := range out {
+		val, err := NewManageSensorDataCache().Get(ctx, sensor.Id)
+
+		// 没有数据的话从influxdb获取
+		if err != nil {
+
+			list, total, err := NewManageInfluxdb().SearchTable(ctx, &model.PageListReq{
+				PageReq: page.PageReq{
+					Page:     1,
+					PageSize: 1,
+				},
+			}, &req.ManageInfluxdbSearch{
+				// Precision: 1,
+				SensorIds: []int64{sensor.Id},
+				DeviceId:  deviceId,
+			})
+
+			if err != nil || total == 0 {
+				continue
+			}
+
+			sensor.Value = list[0][fmt.Sprintf("c_%d", sensor.Id)]
+			sensor.DataTime = list[0]["time"].(time.Time)
+			continue
+		}
+		sensor.Value = val.Value
+		sensor.DataTime = val.CreateTime
+	}
+	return
+}
+
+func (s *sDevice) getAllChildrenIds(ctx context.Context, parentId int64) ([]int64, error) {
+	result := []int64{parentId}
+	queue := []int64{parentId}
+
+	for len(queue) > 0 {
+		// var next []int64
+		var rows []*do.ManageArea
+
+		err := NewManageArea().Model(ctx).WhereIn("parent_id", queue).Fields("id").Scan(&rows)
+		// fmt.Println("next====================", next)
+		next := make([]int64, 0, len(rows))
+		for _, r := range rows {
+			next = append(next, gconv.Int64(r.Id))
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		if len(next) == 0 {
+			break
+		}
+
+		result = append(result, next...)
+		queue = next
+	}
+
+	return result, nil
+}
 func (s *sDevice) handleDeviceSearch(ctx context.Context, in *req.ManageDeviceSearch) (query *gdb.Model) {
 	query = s.Model(ctx)
 	if in == nil {
@@ -254,6 +344,18 @@ func (s *sDevice) handleDeviceSearch(ctx context.Context, in *req.ManageDeviceSe
 
 	if in.ServerId > 0 {
 		query = query.Where("server_id", in.ServerId)
+	}
+
+	if len(in.AreaIds) > 0 {
+		ids := []int64{}
+		for _, id := range in.AreaIds {
+			childrenIds, err := s.getAllChildrenIds(ctx, id)
+			if err != nil {
+				continue
+			}
+			ids = append(ids, childrenIds...)
+		}
+		query = query.WhereIn("area_id", ids)
 	}
 
 	return

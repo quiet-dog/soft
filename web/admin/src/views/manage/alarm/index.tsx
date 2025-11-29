@@ -14,8 +14,10 @@ export function useAlarmHook() {
         { title: "报警编号", dataIndex: 'id', },
         { title: "报警等级", dataIndex: 'level' },
         { title: "传感器名称", dataIndex: 'sensorId' },
-        { title: "报警状态", dataIndex: "isLift" },
+        { title: "设备名称", dataIndex: 'deviceName', search: true },
+        { title: "报警状态", dataIndex: "isLift", search: true },
         { title: "报警时间", dataIndex: "createdAt", },
+        { title: "解除时间", dataIndex: "endTime", },
     ])
 
     const crudRef = ref()

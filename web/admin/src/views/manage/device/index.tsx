@@ -136,7 +136,7 @@ export function useDeviceHook() {
     const sExtend = ref()
     const changeServer = async (value: number) => {
         console.log('changeServer', value)
-        asyncComponent.value = await getAsyncServerConfigComponent(value)
+        // asyncComponent.value = await getAsyncServerConfigComponent(value)
         asyncServerId.value = value
         crudRef.value.getFormData().serverId = value
         // sExtend.value = crudRef.value.getFormData().extend

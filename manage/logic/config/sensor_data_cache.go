@@ -48,7 +48,6 @@ func (s *sSensorDataCache) Store(ctx context.Context, key int64, value gateway.V
 	if err != nil {
 		fmt.Println("=============存储传感器数据失败===========", err)
 	}
-
 	s.StoreDevice(ctx, key)
 	return
 }

@@ -33,3 +33,8 @@ type DeviceSensorInfo struct {
 	DeviceInfo
 	Sensors []*SensorTableRow `json:"sensors" description:"传感器列表"` // 模型路径
 }
+
+type DeviceSensorInfoTableRow struct {
+	Rows  []*DeviceSensorInfo `json:"rows" description:"设备传感器信息列表"`
+	Total int                 `json:"total" description:"总条数"`
+}

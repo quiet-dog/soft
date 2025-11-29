@@ -1,6 +1,6 @@
 import { http } from "@/utils/http";
 import { BaseIds, Page, TreeLeaf } from "../base";
-import { DeviceEdit, DeviceInfo, DeviceRead, DeviceRow, DeviceSearch, DeviceTest } from "./types";
+import { DeviceEdit, DeviceInfo, DeviceRead, DeviceRow, DeviceRowsHaveSensors, DeviceSearch, DeviceTest, GetPageListForSearchHaveSensors } from "./types";
 import { SensorAlarmRow, SensorRow } from "../sensor/types";
 
 export default {
@@ -84,6 +84,22 @@ export default {
     }) {
         return http({
             url: '/manage/device/saveSensorAlarmList',
+            method: 'post',
+            data
+        })
+    },
+
+    // 获取当前数据
+    getSensorNow(deviceId: number) {
+        return http<SensorRow[]>({
+            url: '/manage/device/getSensorNow/' + deviceId,
+            method: 'get',
+        })
+    },
+    // /device/getPageListForSearchHaveSensors 获取带下面传感器的设备列表
+    getPageListForSearchHaveSensors(data: DeviceSearch) {
+        return http<GetPageListForSearchHaveSensors>({
+            url: '/manage/device/getPageListForSearchHaveSensors',
             method: 'post',
             data
         })

@@ -91,7 +91,7 @@ func (t *ExprTemplate) ToExprValueFloat64(value any) (result float64, err error)
 func (t *ExprTemplate) ToExprValueInfluxdbFloat64(value any) string {
 	v, err := t.ToExprValueFloat64(value)
 	if err != nil {
-		return fmt.Sprintf("%fi", 0.0)
+		return fmt.Sprintf("%f", 0.0)
 	}
 	return fmt.Sprintf("%f", v)
 }
@@ -119,7 +119,7 @@ func (t *ExprTemplate) ToExprValue(value any) (result any, err error) {
 	return data, nil
 }
 
-// 直接转换为influxdb的float64
+// 不经expr转换直接转换为influxdb的float64
 func (t *ExprTemplate) ToValueInfluxdbFloat64(value any) string {
 	v, err := t.ToValueFloat64(value)
 	if err != nil {

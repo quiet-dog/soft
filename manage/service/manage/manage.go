@@ -62,6 +62,8 @@ type (
 		SaveSensorInfo(ctx context.Context, r *req.DeviceSensorInfoSaveReq) (err error)
 		GetSensorAlarmList(ctx context.Context, deviceId int64) (sensors []*res.SensorAlarmRow, err error)
 		SaveSensorAlarmList(ctx context.Context, deviceId int64, sensors []*res.SensorAlarmRow) (err error)
+		GetSensorNow(ctx context.Context, deviceId int64) (out []*res.SensorInfo, err error)
+		GetPageListForSearchHaveSensors(ctx context.Context, r *model.PageListReq, in *req.ManageDeviceSearch) (res []*res.DeviceSensorInfo, total int, err error)
 		// GetOpc(ctx context.Context, deviceId int64) (opc *res.OpcInfo, err error)
 	}
 
@@ -95,7 +97,7 @@ type (
 
 	IManageInfluxdb interface {
 		StoreDataChannel(ctx context.Context, msg gateway.Msg) (err error)
-		Store(ctx context.Context, data gateway.Value, sensorId int64) (err error)
+		Store(ctx context.Context, data gateway.Value, sensorId int64) (cValue any, err error)
 		SearchSensorDataList(ctx context.Context, req *model.PageListReq, in *req.ManageInfluxdbSearch) (out *res.SensorDataList, err error)
 		SearchSensorEchart(ctx context.Context, re *model.PageListReq, in *req.ManageInfluxdbOneSensorSearch) (out *res.SensorDataList, err error)
 	}

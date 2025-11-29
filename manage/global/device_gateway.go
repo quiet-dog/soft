@@ -46,10 +46,11 @@ func InitDeviceGateway() {
 		for _, device := range devices {
 			deviceIds = append(deviceIds, device.Id)
 		}
-		sensors, _, _ := manage.ManageSensor().GetPageListForSearch(context.Background(), &model.PageListReq{}, &req.ManageSensorSearch{})
+		sensors, _, _ := manage.ManageSensor().GetPageListForSearch(context.Background(), &model.PageListReq{}, &req.ManageSensorSearch{
+			DeviceIds: deviceIds,
+		})
 
 		if server.Type == gateway.SERVER_OPC {
-
 			for _, sensor := range sensors {
 				opc, err := manage.ManageOpc().Read(context.Background(), sensor.Extend.Get("id").Int64())
 				if err != nil {
@@ -65,25 +66,15 @@ func InitDeviceGateway() {
 
 		} else if server.Type == gateway.SERVER_MODBUS_TCP {
 			node := []*gjson.Json{}
-			for _, device := range devices {
-				deviceJson := gjson.New(nil)
-				sensorMap := make(map[int64]gateway.ModbusSensor)
-				for _, sensor := range sensors {
-					if sensor.DeviceId == device.Id {
-						deviceJson.Set("deviceId", device.Id)
-						deviceJson.Set("slaveId", device.Extend.Get("slaveId").Uint16())
-						sensorMap[sensor.Id] = gateway.ModbusSensor{
-							StartAddress: sensor.Extend.Get("start").Uint16(),
-							Quantity:     sensor.Extend.Get("quantity").Uint16(),
-							SensorId:     sensor.Id,
-							ReadType:     sensor.Extend.Get("readType").Int64(),
-						}
-					}
-				}
-				deviceJson.Set("sensors", sensorMap)
-				deviceJson.Set("slaveId", device.Extend.Get("slaveId").Uint16())
-				deviceJson.Set("deviceId", device.Id)
-				node = append(node, deviceJson)
+			for _, sensor := range sensors {
+				g := gjson.New(nil, false)
+				g.Set("deviceId", sensor.DeviceId)
+				g.Set("sensorId", sensor.Id)
+				g.Set("slaveId", sensor.Extend.Get("slaveId").Uint8())
+				g.Set("startAddress", sensor.Extend.Get("startAddress").Uint16())
+				g.Set("quantity", sensor.Extend.Get("quantity").Uint16())
+				g.Set("readType", sensor.Extend.Get("readType").Int64())
+				node = append(node, g)
 			}
 			c.AddNodes(node...)
 

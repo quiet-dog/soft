@@ -10,6 +10,7 @@ import (
 	"devinggo/modules/system/logic/base"
 	"devinggo/modules/system/model"
 	"devinggo/modules/system/pkg/utils"
+	websocket2 "devinggo/modules/system/pkg/websocket"
 	"fmt"
 	"strings"
 	"time"
@@ -59,6 +60,7 @@ func (s *sInfluxdb) SearchSensorDataList(ctx context.Context, req *model.PageLis
 	return
 }
 
+// 搜索传感器数据获取列表
 func (s *sInfluxdb) SearchSensorEchart(ctx context.Context, re *model.PageListReq, in *req.ManageInfluxdbOneSensorSearch) (out *res.SensorDataList, err error) {
 	out = &res.SensorDataList{}
 	dao.ManageSensor.Ctx(ctx).As("s").Fields("s.device_id", "s.sensor_type_id",
@@ -92,6 +94,7 @@ func (s *sInfluxdb) SearchSensorEchart(ctx context.Context, re *model.PageListRe
 	return
 }
 
+// 搜索传感器数据获取列表
 func (s *sInfluxdb) SearchTable(ctx context.Context, req *model.PageListReq, in *req.ManageInfluxdbSearch) (list []map[string]interface{}, total int64, err error) {
 	line, totalLine := s.handleInfluxdbSearch(ctx, req, in)
 	fmt.Println("line", line)
@@ -120,6 +123,7 @@ func (s *sInfluxdb) SearchTable(ctx context.Context, req *model.PageListReq, in 
 
 }
 
+// 通过传感器ID搜索数据获取列表
 func (s *sInfluxdb) SearchTableBySensorId(ctx context.Context, r *model.PageListReq, in *req.ManageInfluxdbSearch) (list []map[string]interface{}, total int64, err error) {
 	sensorInfo, err := manage.ManageSensor().Read(ctx, in.SensorId)
 	if err != nil {
@@ -136,7 +140,8 @@ func (s *sInfluxdb) SearchTableBySensorId(ctx context.Context, r *model.PageList
 	return
 }
 
-func (s *sInfluxdb) Store(ctx context.Context, data gateway.Value, sensorId int64) (err error) {
+// 存储数据到influxdb
+func (s *sInfluxdb) Store(ctx context.Context, data gateway.Value, sensorId int64) (cValue any, err error) {
 	c, err := s.Model(context.Background())
 	if err != nil {
 		fmt.Println("Failed to create InfluxDB client:", err)
@@ -150,11 +155,10 @@ func (s *sInfluxdb) Store(ctx context.Context, data gateway.Value, sensorId int6
 	if err != nil {
 		fmt.Println("Failed to read InfluxDB format for sensor ID:", sensorId, "Error:", err)
 
-		return
+		return 0, err
 	}
 
-	current := influxdbData.Template.ToValueInfluxdbFloat64(data.Value)
-
+	current := influxdbData.Template.ToExprValueInfluxdbFloat64(data.Value)
 	// line := "1,sensor=2 value=23.5,current=45i"
 	line := fmt.Sprintf("t_%d,sensor=s_%d c_%d=%s,e_%d=%s %d",
 		influxdbData.DeviceId,
@@ -166,13 +170,12 @@ func (s *sInfluxdb) Store(ctx context.Context, data gateway.Value, sensorId int6
 		data.CreateTime.UnixNano(),
 	)
 	err = c.Write(ctx, []byte(line))
-	return
+	return current, err
 }
 
+// 数据接收处理入口
 func (s *sInfluxdb) StoreDataChannel(ctx context.Context, msg gateway.Msg) (err error) {
-	fmt.Println("===========接受数据============", msg.Value)
 	// 存储redis 存储未经转换的数据
-	NewManageSensorDataCache().Store(ctx, msg.Value.ID, msg.Value)
 
 	// 是否报警
 	NewManageEvent().CheckEvent(ctx, msg.Value.ID, msg.Value)
@@ -181,11 +184,34 @@ func (s *sInfluxdb) StoreDataChannel(ctx context.Context, msg gateway.Msg) (err 
 		// 第三方的接入
 	}
 	// 存储到influxdb
-	err = s.Store(ctx, msg.Value, msg.Value.ID)
+	cValue, err := s.Store(ctx, msg.Value, msg.Value.ID)
 	if err != nil {
-		fmt.Println("Failed to store data to InfluxDB:", err)
 		return
 	}
+
+	msg.Value.Value = cValue
+
+	// 存储到redis
+	fmt.Println("===========存储到redis============", msg.Value)
+	_, err = NewManageSensorDataCache().Store(ctx, msg.Value.ID, msg.Value)
+	if err != nil {
+		fmt.Println("Failed to store data to InfluxDB:", err)
+	}
+
+	s.SendTopicByArea(ctx, msg.Value.ID, cValue)
+
+	// toId := gconv.String(userId)
+	// clientIdWResponse := &websocket2.ClientIdWResponse{
+	// 	ID: toId,
+	// 	WResponse: &websocket2.WResponse{
+	// 		BindEvent: "ev_new_message",
+	// 		Event:     websocket2.IdMessage,
+	// 		Data:      rs,
+	// 		Code:      200,
+	// 		RequestId: "0",
+	// 	},
+	// }
+	// websocket2.PublishIdMessage(ctx, msg.Value.ID, msg.Value)
 
 	return
 }
@@ -223,7 +249,7 @@ func (s *sInfluxdb) handleInfluxdbSearch(ctx context.Context, req *model.PageLis
 
 	// 时间范围
 	if in.BeginTime != 0 {
-		timeCond := fmt.Sprintf("time >= '%s'", time.UnixMilli(in.BeginTime).Format(time.RFC3339))
+		timeCond := fmt.Sprintf("time >= '%s'", time.Unix(0, in.BeginTime).Format(time.RFC3339))
 		if conditions != "" {
 			conditions += " AND " + timeCond
 		} else {
@@ -231,7 +257,7 @@ func (s *sInfluxdb) handleInfluxdbSearch(ctx context.Context, req *model.PageLis
 		}
 	}
 	if in.EndTime != 0 {
-		timeCond := fmt.Sprintf("time <= '%s'", time.UnixMilli(in.EndTime).Format(time.RFC3339))
+		timeCond := fmt.Sprintf("time <= '%s'", time.Unix(0, in.EndTime).Format(time.RFC3339))
 		if conditions != "" {
 			conditions += " AND " + timeCond
 		} else {
@@ -264,4 +290,15 @@ func (s *sInfluxdb) handleInfluxdbSearch(ctx context.Context, req *model.PageLis
 	fmt.Println("InfluxDB Query Line:", line)
 	fmt.Println("InfluxDB Total Query Line:", total)
 	return
+}
+
+func (s *sInfluxdb) SendTopicByArea(ctx context.Context, sensorId int64, value any) {
+	topics := websocket2.GetAllTopics(ctx)
+
+	for _, topic := range topics {
+		if strings.Contains(topic, "area_data") {
+			// fmt.Println("topic============", topic)
+		}
+	}
+
 }

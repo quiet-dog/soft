@@ -138,3 +138,26 @@ type SaveSensorAlarmListReq struct {
 type SaveSensorAlarmListRes struct {
 	g.Meta `mime:"application/json"`
 }
+
+type GetSensorNowReq struct {
+	g.Meta `path:"/device/getSensorNow/{Id}" method:"get" tags:"设备" summary:"获取设备传感器当前值." x-permission:"system:device:getSensorNow"`
+	model.AuthorHeader
+	Id int64 `json:"id" dc:"岗位 id" v:"required|min:1#设备Id不能为空"`
+}
+
+type GetSensorNowRes struct {
+	g.Meta `mime:"application/json"`
+	Data   []*res.SensorInfo `json:"data" dc:"设备传感器当前值"`
+}
+
+type GetPageListForSearchHaveSensorsReq struct {
+	g.Meta `path:"/device/getPageListForSearchHaveSensors" method:"post" tags:"设备" summary:"获取设备列表,更加详细,带传感器数据和当前数据." x-permission:"system:device:getPageListForSearchHaveSensors"`
+	model.AuthorHeader
+	model.PageListReq
+	req.ManageDeviceSearch
+}
+
+type GetPageListForSearchHaveSensorsRes struct {
+	g.Meta `mime:"application/json"`
+	Data   *res.DeviceSensorInfoTableRow `json:"data" dc:"设备列表,更加详细,带传感器数据和当前数据"`
+}

@@ -123,19 +123,21 @@ func (s *sSensor) Save(ctx context.Context, in *req.ManageSensorSave) (id int64,
 		return 0, err
 	}
 
+	s.handleSensorType(ctx, server, in.DeviceId, in.Extend)
+
 	// 处理不同的服务器类型的传感器或字段数据 // opc的
-	if server.Type == gateway.SERVER_OPC {
-		device.Unit = server.Extend.Get("unit").String()
-		client, ok := global.DeviceGateway.Client(server.Id)
-		if !ok {
-			return 0, fmt.Errorf("获取服务器失败")
-		}
-		g := gjson.New(nil, false)
-		g.Set("id", id)
-		g.Set("nodeId", server.Extend.Get("nodeId").String())
-		g.Set("deviceId", in.DeviceId)
-		client.AddNodes()
-	}
+	// if server.Type == gateway.SERVER_OPC {
+	// 	device.Unit = server.Extend.Get("unit").String()
+	// 	client, ok := global.DeviceGateway.Client(server.Id)
+	// 	if !ok {
+	// 		return 0, fmt.Errorf("获取服务器失败")
+	// 	}
+	// 	g := gjson.New(nil, false)
+	// 	g.Set("id", id)
+	// 	g.Set("nodeId", server.Extend.Get("nodeId").String())
+	// 	g.Set("deviceId", in.DeviceId)
+	// 	client.AddNodes(g)
+	// }
 
 	return
 }
@@ -156,23 +158,6 @@ func (s *sSensor) Tree(ctx context.Context, req *model.PageListReq, in *req.Mana
 			IsLeaf:   true, // Assuming devices are leaf nodes
 		})
 	}
-	return
-}
-
-func (s *sSensor) handleSensorSearch(ctx context.Context, in *req.ManageSensorSearch) (query *gdb.Model) {
-	query = s.Model(ctx)
-	if in == nil {
-		return query
-	}
-
-	if !g.IsEmpty(in.Name) {
-		query = query.WhereLike("name", "%"+in.Name+"%")
-	}
-
-	if len(in.DeviceIds) > 0 {
-		query = query.WhereIn("device_id", in.DeviceIds)
-	}
-
 	return
 }
 
@@ -315,10 +300,55 @@ func (s *sSensor) ReadHistoryData(ctx context.Context, r *model.PageListReq, in 
 	return
 }
 
-func (s *sSensor) getSensorNow(ctx context.Context, sensorId int64) (out *common.SensorToInfluxdb, err error) {
-	// val, err := manage.ManageSensorDataCache().Get(ctx, sensorId)
-	// if err != nil {
-	// 	return
-	// }
+// 处理不同类型的字段数据添加到网关
+func (s *sSensor) handleSensorType(ctx context.Context, serverInfo *res.ServerInfo, deviceId int64, sensorExtend *gjson.Json) (err error) {
+
+	c, isExit := global.DeviceGateway.GetClient(serverInfo.Id)
+	if !isExit {
+		return fmt.Errorf("获取客户端失败")
+	}
+
+	if sensorExtend.IsNil() {
+		return fmt.Errorf("传感器扩展信息为空")
+	}
+
+	node := gjson.New(nil, false)
+	switch serverInfo.Type {
+	case gateway.SERVER_OPC:
+		node.Set("id", sensorExtend.Get("id").Int64())
+		node.Set("nodeId", sensorExtend.Get("nodeId").String())
+		node.Set("deviceId", sensorExtend.Get("deviceId").Int64())
+	default:
+		node.Set("slaveId", sensorExtend.Get("slaveId").Uint8())
+		node.Set("deviceId", deviceId)
+		node.Set("sensorId", sensorExtend.Get("id").Int64())
+		node.Set("startAddress", sensorExtend.Get("startAddress").Uint16())
+		node.Set("quantity", sensorExtend.Get("quantity").Uint16())
+		node.Set("readType", sensorExtend.Get("readType").Int64())
+		// sensors := make(map[int64]gateway.ModbusSensor)
+	}
+
+	c.AddNodes(node)
+	return
+}
+
+func (s *sSensor) handleSensorSearch(ctx context.Context, in *req.ManageSensorSearch) (query *gdb.Model) {
+	query = s.Model(ctx)
+	if in == nil {
+		return query
+	}
+
+	if !g.IsEmpty(in.Name) {
+		query = query.WhereLike("name", "%"+in.Name+"%")
+	}
+
+	if len(in.DeviceIds) > 0 {
+		query = query.WhereIn("device_id", in.DeviceIds)
+	}
+
+	if in.DeviceId != 0 {
+		query = query.Where("device_id", in.DeviceId)
+	}
+
 	return
 }
