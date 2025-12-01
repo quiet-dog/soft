@@ -47,14 +47,9 @@ func (s *sArea) GetPageListForSearch(ctx context.Context, req *model.PageListReq
 }
 
 func (s *sArea) Save(ctx context.Context, in *req.ManageAreaSave) (id int64, err error) {
-	if in.ParentId != 0 {
-		isExitArea, err := s.IsExitAreaById(ctx, in.ParentId)
-		if err != nil {
-			return 0, err
-		}
-		if !isExitArea {
-			return 0, fmt.Errorf("上级区域不存在")
-		}
+	err = s.handleAreaLevel(ctx, in)
+	if err != nil {
+		return 0, err
 	}
 
 	var area *do.ManageArea
@@ -139,6 +134,10 @@ func (s *sArea) handleAreaSearch(ctx context.Context, in *req.ManageAreaSearch) 
 		query = query.WhereIn(dao.ManageArea.Table()+".id", in.Ids)
 	}
 
+	if !g.IsEmpty(in.Level) {
+		query = query.Where("level like ?", "%,"+in.Level+",%")
+	}
+
 	// if in.ParentId > 0 {
 	query = query.Where(dao.ManageArea.Table()+".parent_id", in.ParentId)
 	// }
@@ -148,6 +147,11 @@ func (s *sArea) handleAreaSearch(ctx context.Context, in *req.ManageAreaSearch) 
 func (s *sArea) UpdateInfo(ctx context.Context, in *req.ManageAreaUpdateInfo) (out sql.Result, err error) {
 	if g.IsEmpty(in.Id) {
 		err = myerror.MissingParameter(ctx, "区域id为空")
+		return
+	}
+
+	err = s.handleAreaLevel(ctx, &in.ManageAreaSave)
+	if err != nil {
 		return
 	}
 
@@ -228,4 +232,22 @@ func (s *sArea) buildAreaTree(rows []*res.AreaTableRow) []*res.AreaTree {
 	}
 
 	return roots
+}
+
+func (s *sArea) handleAreaLevel(ctx context.Context, in *req.ManageAreaSave) (err error) {
+	if in.ParentId == 0 {
+		in.Level = ",0,"
+	} else {
+		var parentArea *do.ManageArea
+		err = s.Model(ctx).Where(dao.ManageArea.Columns().Id, in.ParentId).Scan(&parentArea)
+		if utils.IsError(err) {
+			return err
+		}
+		if !g.IsEmpty(parentArea) {
+			in.Level = fmt.Sprintf("%s%d,", parentArea.Level, in.ParentId)
+		} else {
+			return fmt.Errorf("上级区域不存在")
+		}
+	}
+	return
 }

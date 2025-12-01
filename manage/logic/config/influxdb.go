@@ -12,6 +12,7 @@ import (
 	"devinggo/modules/system/pkg/utils"
 	websocket2 "devinggo/modules/system/pkg/websocket"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -151,25 +152,25 @@ func (s *sInfluxdb) Store(ctx context.Context, data gateway.Value, sensorId int6
 	defer c.Close()
 
 	fmt.Println("Writing data to InfluxDB...", sensorId)
-	influxdbData, err := manage.ManageSensor().ReadInfluxdbFormat(ctx, sensorId)
+	influxdbData, err := manage.ManageSensorTemplateCache().Get(ctx, sensorId)
 	if err != nil {
 		fmt.Println("Failed to read InfluxDB format for sensor ID:", sensorId, "Error:", err)
 
 		return 0, err
 	}
 
-	current := influxdbData.Template.ToExprValueInfluxdbFloat64(data.Value)
+	current := influxdbData.ToExprValueInfluxdbFloat64(data.Value)
 	// line := "1,sensor=2 value=23.5,current=45i"
 	line := fmt.Sprintf("t_%d,sensor=s_%d c_%d=%s,e_%d=%s %d",
-		influxdbData.DeviceId,
-		influxdbData.SensorId,
-		influxdbData.SensorId,
+		data.DeviceId,
+		sensorId,
+		sensorId,
 		current,
-		influxdbData.SensorId,
-		influxdbData.Template.ToExprValueInfluxdbFloat64(data.Value),
+		sensorId,
+		influxdbData.ToExprValueInfluxdbFloat64(data.Value),
 		data.CreateTime.UnixNano(),
 	)
-	err = c.Write(ctx, []byte(line))
+	go c.Write(ctx, []byte(line))
 	return current, err
 }
 
@@ -177,9 +178,10 @@ func (s *sInfluxdb) Store(ctx context.Context, data gateway.Value, sensorId int6
 func (s *sInfluxdb) StoreDataChannel(ctx context.Context, msg gateway.Msg) (err error) {
 	// 存储redis 存储未经转换的数据
 
+	now := time.Now()
 	// 是否报警
-	NewManageEvent().CheckEvent(ctx, msg.Value.ID, msg.Value)
-
+	alarmId, isAlarm, _ := NewManageEvent().CheckEvent(ctx, msg.Value.ID, msg.Value)
+	// 相差多少秒
 	{
 		// 第三方的接入
 	}
@@ -192,26 +194,13 @@ func (s *sInfluxdb) StoreDataChannel(ctx context.Context, msg gateway.Msg) (err 
 	msg.Value.Value = cValue
 
 	// 存储到redis
-	fmt.Println("===========存储到redis============", msg.Value)
 	_, err = NewManageSensorDataCache().Store(ctx, msg.Value.ID, msg.Value)
 	if err != nil {
 		fmt.Println("Failed to store data to InfluxDB:", err)
 	}
 
-	s.SendTopicByArea(ctx, msg.Value.ID, cValue)
-
-	// toId := gconv.String(userId)
-	// clientIdWResponse := &websocket2.ClientIdWResponse{
-	// 	ID: toId,
-	// 	WResponse: &websocket2.WResponse{
-	// 		BindEvent: "ev_new_message",
-	// 		Event:     websocket2.IdMessage,
-	// 		Data:      rs,
-	// 		Code:      200,
-	// 		RequestId: "0",
-	// 	},
-	// }
-	// websocket2.PublishIdMessage(ctx, msg.Value.ID, msg.Value)
+	s.SendTopicByArea(ctx, msg.Value.ID, cValue, isAlarm, alarmId)
+	fmt.Println("===========发送消息============差距多少3", time.Now().Sub(now), msg.Value.Value)
 
 	return
 }
@@ -292,12 +281,50 @@ func (s *sInfluxdb) handleInfluxdbSearch(ctx context.Context, req *model.PageLis
 	return
 }
 
-func (s *sInfluxdb) SendTopicByArea(ctx context.Context, sensorId int64, value any) {
+func (s *sInfluxdb) SendTopicByArea(ctx context.Context, sensorId int64, value any, isAlarm bool, alarmId int64) {
 	topics := websocket2.GetAllTopics(ctx)
-
 	for _, topic := range topics {
-		if strings.Contains(topic, "area_data") {
-			// fmt.Println("topic============", topic)
+		if strings.Contains(topic, "area_data_") {
+			// 删除topic中的area_data_
+			topicCp := strings.Replace(topic, "area_data_", "", 1)
+			areaIds := strings.Split(topicCp, "_")
+
+			for _, areaId := range areaIds {
+				areaIdInt, err := strconv.ParseInt(areaId, 10, 64)
+				if err != nil {
+					continue
+				}
+
+				isExit, err := manage.ManageSensor().IsSensorInArea(ctx, sensorId, areaIdInt)
+
+				if err != nil {
+					continue
+				}
+				if !isExit {
+					continue
+				}
+
+				type Msg struct {
+					Value    any   `json:"value"`
+					IsAlarm  bool  `json:"isAlarm"`
+					SensorId int64 `json:"sensorId"`
+					DeviceId int64 `json:"deviceId"`
+					AlarmId  int64 `json:"alarmId"`
+				}
+
+				msg := Msg{
+					Value:    value,
+					IsAlarm:  isAlarm,
+					SensorId: sensorId,
+					AlarmId:  alarmId,
+				}
+				websocket2.SendToTopic(topic, &websocket2.WResponse{
+					Event:     websocket2.Subscribe,
+					Data:      msg,
+					Code:      200,
+					BindEvent: "sensor_data",
+				})
+			}
 		}
 	}
 

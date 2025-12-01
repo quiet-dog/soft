@@ -13,6 +13,7 @@ type ManageDeviceSearch struct {
 	InstallationLocation string  `json:"installationLocation" description:"安装位置"` // 安装位置
 	ServerId             int64   `json:"serverId" description:"服务器ID"`            // 服务器ID
 	AreaIds              []int64 `json:"areaIds" description:"区域ID"`              // 区域ID
+	Level                string  `json:"level" description:"区域等级"`                // 区域等级
 }
 
 type ManageDeviceSave struct {

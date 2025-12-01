@@ -48,7 +48,8 @@ func (s *sAlarm) Save(ctx context.Context, in req.ManageAlarmSave) (id int64, er
 	}
 
 	id, err = rs.LastInsertId()
-	s.sendMsg(ctx, id)
+
+	manage.ManageAlarmSensorCache().Store(ctx, in.SensorId, in.ThresholdId, id)
 	return
 }
 

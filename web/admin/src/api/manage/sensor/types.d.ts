@@ -108,3 +108,12 @@ export interface SensorData extends SensorRow {
     sensorUnit?: string;
     sensorName?: string;
 }
+
+
+export interface SensorWebsocketData {
+    sensorId?: number;
+    value: any
+    deviceId?: number;
+    isAlarm?: boolean;
+    alarmId?: number;
+}

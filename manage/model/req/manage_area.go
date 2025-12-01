@@ -6,6 +6,7 @@ type ManageAreaSearch struct {
 	Name     string `json:"name" description:"区域名称"`     // 区域名称
 	Remark   string `json:"remark" description:"备注"`     // 备注
 	ParentId int64  `json:"parentId" description:"父级ID"` // 父级ID
+	Level    string `json:"level" description:"区域等级"`    // 区域等级
 	base.BaseIds
 }
 
@@ -14,6 +15,7 @@ type ManageAreaSave struct {
 	Remark   string `json:"remark" description:"备注"`                            // 备注
 	ParentId int64  `json:"parentId" description:"父级ID"`                        // 父级ID
 	Sort     int    `json:"sort" description:"排序"`                              // 排序
+	Level    string `json:"level" description:"区域等级"`                           // 区域等级
 }
 
 type ManageAreaUpdateInfo struct {

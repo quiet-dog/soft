@@ -85,6 +85,7 @@ type (
 		Read(ctx context.Context, sensorId int64) (sensorInfo *res.SensorInfo, err error)
 		ReadEchart(ctx context.Context, re *model.PageListReq, in *req.ManageInfluxdbOneSensorSearch) (out *res.SensorEchart, err error)
 		ReadHistoryData(ctx context.Context, r *model.PageListReq, in *req.ManageInfluxdbOneSensorSearch) (result *res.SensorDataList, err error)
+		IsSensorInArea(ctx context.Context, sensorId int64, areaId int64) (isExit bool, err error)
 	}
 
 	IManageOpc interface {
@@ -111,7 +112,7 @@ type (
 		Store(ctx context.Context, key int64, value gateway.Value) (v *gvar.Var, err error)
 		Get(ctx context.Context, key int64) (t gateway.Value, err error)
 		Delete(ctx context.Context, key int64) (n int64, err error)
-		StoreDevice(ctx context.Context, sensorId int64) (v *gvar.Var, err error)
+		StoreDevice(ctx context.Context, sensorId int64, deviceId int64) (v *gvar.Var, err error)
 		GetDevice(ctx context.Context, deviceId int64) (data []int64, err error)
 		DeleteDevice(ctx context.Context, sensorId int64) (v *gvar.Var, err error)
 	}
@@ -138,7 +139,7 @@ type (
 
 	IManageEvent interface {
 		Save(ctx context.Context, in *req.ManageEventReq) (id int64, err error)
-		CheckEvent(ctx context.Context, sensorId int64, value gateway.Value) (id int64, err error)
+		CheckEvent(ctx context.Context, sensorId int64, value gateway.Value) (id int64, isAlarm bool, err error)
 		GetPageListForSearch(ctx context.Context, req *model.PageListReq, in *req.ManageEventSearch) (res []*res.EventTableRow, total int, err error)
 	}
 
@@ -163,6 +164,13 @@ type (
 	IManageThird interface {
 		SendSensorDataByWs(ctx context.Context, value gateway.Msg)
 	}
+
+	IManageAlarmSensorCache interface {
+		Model(ctx context.Context) *gredis.Redis
+		Get(ctx context.Context, sensorId int64, thresholdId int64) (alarmId int64, err error)
+		Store(ctx context.Context, sensorId int64, thresholdId int64, alarmId int64) (err error)
+		Delete(ctx context.Context, sensorId int64, thresholdId int64) (err error)
+	}
 )
 
 var (
@@ -183,6 +191,7 @@ var (
 	localManageAlarm               IManageAlarm
 	localManageDeviceControl       IManageDeviceControl
 	localManageThird               IManageThird
+	localManageAlarmSensorCache    IManageAlarmSensorCache
 )
 
 func ManageArea() IManageArea {
@@ -371,4 +380,15 @@ func ManageThird() IManageThird {
 
 func RegisterManageThird(i IManageThird) {
 	localManageThird = i
+}
+
+func ManageAlarmSensorCache() IManageAlarmSensorCache {
+	if localManageAlarmSensorCache == nil {
+		panic("implement not found for interface localManageAlarmSensorCache, forgot register?")
+	}
+	return localManageAlarmSensorCache
+}
+
+func RegisterManageAlarmSensorCache(i IManageAlarmSensorCache) {
+	localManageAlarmSensorCache = i
 }

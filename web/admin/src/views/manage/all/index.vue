@@ -17,8 +17,8 @@
                         <ADescriptions>
                             <ADescriptionsItem v-for="sensor in value.sensors" :key="sensor.id">
                                 <span>{{ sensor.name }}</span>:
-                                <span>{{ sensor.value }}</span>
-                                <span>{{ sensor.unit }}</span>
+                                <span :style="{ color: isAlarm(value.isAlarm) ? 'red' : '' }">{{ sensor.value }}</span>
+                                <span :style="{ color: isAlarm(value.isAlarm) ? 'red' : '' }">{{ sensor.unit }}</span>
                             </ADescriptionsItem>
                         </ADescriptions>
                     </ACard>
@@ -31,7 +31,14 @@
 <script lang="ts" setup>
 import { useAllHook } from '.';
 
-const { areaList, loadAreaTree, searchParams, getDeviceList, deviceList, loading,selectArea } = useAllHook()
+const { areaList, loadAreaTree, searchParams, getDeviceList, deviceList, loading, selectArea } = useAllHook()
+
+function isAlarm(value) {
+    if (value == undefined || value == null) {
+        return false
+    }
+    return value
+}
 
 </script>
 

@@ -17,7 +17,7 @@ type sThresholdCache struct {
 }
 
 const thresholdCacheKey = "threshold"
-const thresholdCacheDuration = 5 * time.Second
+const thresholdCacheDuration = 10 * time.Second
 
 func init() {
 	manage.RegisterManageThresholdCache(NewManageThresholdCache())
@@ -32,9 +32,11 @@ func (s *sThresholdCache) Model(ctx context.Context) *gredis.Redis {
 }
 
 func (s *sThresholdCache) Get(ctx context.Context, sensorId int64) (thresholds []*req.ThresholdRow, err error) {
+
 	key := fmt.Sprintf("%s-%d", thresholdCacheKey, sensorId)
 
 	v, err := s.Model(ctx).Get(ctx, key)
+
 	if err != nil {
 		return
 	}
@@ -47,6 +49,13 @@ func (s *sThresholdCache) Get(ctx context.Context, sensorId int64) (thresholds [
 	if err = v.Scan(&thresholds); err != nil {
 		return
 	}
+
+	// 重新设置到期时间
+	_, err = s.Model(ctx).Expire(ctx, key, int64(thresholdCacheDuration.Seconds()))
+	if err != nil {
+		return
+	}
+
 	return
 }
 

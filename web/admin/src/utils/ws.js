@@ -3,7 +3,7 @@ import {
     LinearBackoff,
 } from 'websocket-ts';
 
-import {v4 as uuidv4} from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 
 class WsOptions {
     constructor() {
@@ -12,8 +12,8 @@ class WsOptions {
         this.heartTime = 3000;
         this.retryLockTime = 120000;
         this.bufferNumber = 1000;
-        this.onProgress = (detail, ws) => {};
-        this.onConnected = (data, ws) => {};
+        this.onProgress = (detail, ws) => { };
+        this.onConnected = (data, ws) => { };
     }
 }
 
@@ -42,7 +42,7 @@ class WsMessageReq {
 class messageData {
     constructor() {
         this.message = new WsMessageReq();
-        this.callback = (data) => {};
+        this.callback = (data) => { };
     }
 }
 
@@ -101,10 +101,10 @@ class Ws {
                         message.e !== RequestEvents.PingAll
                     ) {
                         console.log(`_onEvent:${this._onEvent}`);
-                        if(this._onEvent.has(message.be)){
+                        if (this._onEvent.has(message.be)) {
                             const callback = this._onEvent.get(message.be);
                             callback(message, i);
-                        }else{
+                        } else {
                             console.warn(`WebSocket 消息事件[${message.be}]未绑定...`);
                         }
                     }
@@ -312,12 +312,12 @@ class Ws {
 
     on(be, callback) {
         console.log(`WebSocket 绑定事件[${be}]...`);
-        if(be){
+        if (be) {
             this._onEvent.set(be, callback);
         }
     }
 
-    sendBroadcastMsg(message,bindEvent) {
+    sendBroadcastMsg(message, bindEvent) {
         const that = this;
         return new Promise((resolve, reject) => {
             that._sendCallback(
@@ -336,7 +336,7 @@ class Ws {
         });
     }
 
-    sendMsgBySid(toSessionId,bindEvent, message) {
+    sendMsgBySid(toSessionId, bindEvent, message) {
         const that = this;
         return new Promise((resolve, reject) => {
             that._sendCallback(

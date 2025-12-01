@@ -142,6 +142,10 @@ func (c *Client) AddNodes(nodes ...*gjson.Json) {
 			device := &ModbusDevice{}
 			if isExitDevice != -1 {
 				device = v.nodes[isExitDevice]
+			} else {
+				device.DeviceId = deviceId
+				device.SlaveId = uint16(slaveId)
+				device.Sensors = make(map[int64]ModbusSensor)
 			}
 
 			if device.Sensors == nil {

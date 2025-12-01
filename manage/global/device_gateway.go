@@ -84,7 +84,16 @@ func InitDeviceGateway() {
 	}
 
 	channel := DeviceGateway.RegisterChannel(1000)
-	for v := range channel {
-		manage.ManageInfluxdb().StoreDataChannel(context.Background(), v)
+	// for v := range channel {
+	// 	manage.ManageInfluxdb().StoreDataChannel(context.Background(), v)
+	// }
+
+	workerCount := 10 // 可调整 2,4,8,16…
+	for i := 0; i < workerCount; i++ {
+		go func() {
+			for v := range channel {
+				manage.ManageInfluxdb().StoreDataChannel(context.Background(), v)
+			}
+		}()
 	}
 }

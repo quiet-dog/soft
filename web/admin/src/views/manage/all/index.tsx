@@ -5,10 +5,37 @@ import { TreeNodeData } from "@arco-design/web-vue/es/tree/interface";
 import { ref } from "vue";
 
 import Msg from '@/ws-serve/msg'
+import { SensorWebsocketData } from "@/api/manage/sensor/types";
 
 export function useAllHook() {
 
     const Wsm = new Msg()
+
+    // @ts-ignore
+    Wsm.ws.on("sensor_data", (data, ws) => {
+        if (data.d !== undefined && data.d !== null) {
+            const sensorData = data.d as SensorWebsocketData
+            deviceList.value.forEach(device => {
+                // 判断是否异常
+                let isAlarm = false
+                device.sensors.forEach(sensor => {
+                    if (sensor.id === sensorData.sensorId) {
+                        sensor.value = sensorData.value
+                        sensor.isAlarm = sensorData.isAlarm
+                        if (sensorData.isAlarm) {
+                            isAlarm = true
+                        }
+                    }
+                })
+                device.isAlarm = isAlarm
+            })
+        }
+    })
+
+    // @ts-ignore
+    Wsm.ws.on("sensor_alarm", (data, ws) => {
+        console.log('sensor alarm', data);
+    })
 
     const areaList = ref<TreeNodeData[]>([{ title: '全部', key: 0, children: [], }])
     const deviceList = ref<DeviceRowsHaveSensors[]>([])
@@ -17,7 +44,8 @@ export function useAllHook() {
     const searchParams = ref({
         page: 1,
         pageSize: 10,
-        areaIds: []
+        areaIds: [],
+        level: ""
     })
 
     function loadAreaTree(nodeData) {
@@ -58,18 +86,18 @@ export function useAllHook() {
     const lastSubscribe = ref("")
 
     function selectArea(val) {
-        searchParams.value.areaIds = val
+        searchParams.value.level = String(val[0])
         getDeviceList()
         const toSubscribe = "area_data_" + val[0]
         // 取消订阅上一个订阅
-        if (lastSubscribe.value) {
+        if (lastSubscribe.value != "") {
             // @ts-ignore
             Wsm.ws.unsubscribe(lastSubscribe.value)
         }
         // @ts-ignore
-        Wsm.ws.subscribe(toSubscribe, (data, ws) => {
-            alert("123123")
-        })
+        Wsm.ws.subscribe(toSubscribe)
+
+
         lastSubscribe.value = toSubscribe
     }
 

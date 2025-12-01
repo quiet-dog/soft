@@ -347,15 +347,12 @@ func (s *sDevice) handleDeviceSearch(ctx context.Context, in *req.ManageDeviceSe
 	}
 
 	if len(in.AreaIds) > 0 {
-		ids := []int64{}
-		for _, id := range in.AreaIds {
-			childrenIds, err := s.getAllChildrenIds(ctx, id)
-			if err != nil {
-				continue
-			}
-			ids = append(ids, childrenIds...)
-		}
-		query = query.WhereIn("area_id", ids)
+		query = query.WhereIn("area_id", in.AreaIds)
+	}
+
+	if !g.IsEmpty(in.Level) {
+		areaLevelSql := g.DB().Model(dao.ManageArea.Table()).Where("level like ?", "%,"+in.Level+",%").Fields("id")
+		query = query.Where("area_id in ?", areaLevelSql)
 	}
 
 	return

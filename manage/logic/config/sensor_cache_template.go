@@ -50,11 +50,27 @@ func (s *sSensorTemplateCache) Get(ctx context.Context, sensorId int64) (templat
 		}
 		tem = v.String()
 		template = expr_template.ExprTemplate(tem)
-		s.Store(ctx, sensorId)
+		if template == "" {
+			template = "value"
+		}
+
+		_, err = s.Model(ctx).Set(ctx, key, string(template), gredis.SetOption{
+			TTLOption: gredis.TTLOption{
+				EX: &exSensorTemplate,
+			},
+		})
+		if err != nil {
+			return
+		}
 		return
 	}
 
 	template = expr_template.ExprTemplate(v.String())
+	// 重新设置到期时间
+	_, err = s.Model(ctx).Expire(ctx, key, int64(sensorTemplateCacheDuration.Seconds()))
+	if err != nil {
+		return
+	}
 	return
 }
 

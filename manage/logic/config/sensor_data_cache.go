@@ -48,7 +48,7 @@ func (s *sSensorDataCache) Store(ctx context.Context, key int64, value gateway.V
 	if err != nil {
 		fmt.Println("=============存储传感器数据失败===========", err)
 	}
-	s.StoreDevice(ctx, key)
+	s.StoreDevice(ctx, key, value.DeviceId)
 	return
 }
 
@@ -75,13 +75,9 @@ func (s *sSensorDataCache) Delete(ctx context.Context, key int64) (n int64, err 
 	return
 }
 
-func (s *sSensorDataCache) StoreDevice(ctx context.Context, sensorId int64) (v *gvar.Var, err error) {
-	sensorInfo, err := manage.ManageSensor().Read(ctx, sensorId)
-	if err != nil {
-		return
-	}
+func (s *sSensorDataCache) StoreDevice(ctx context.Context, sensorId int64, deviceId int64) (v *gvar.Var, err error) {
 
-	key := fmt.Sprintf("%s-%d", deviceDataGroup, sensorInfo.DeviceId)
+	key := fmt.Sprintf("%s-%d", deviceDataGroup, deviceId)
 	v, err = s.Model(ctx).Get(ctx, key)
 	if err != nil {
 		return
@@ -100,7 +96,6 @@ func (s *sSensorDataCache) StoreDevice(ctx context.Context, sensorId int64) (v *
 		}
 	}
 
-	// ex := int64(duration.Seconds()) // time.Duration -> 秒 -> int64
 	v, err = s.Model(ctx).Set(ctx, key, data, gredis.SetOption{
 		TTLOption: gredis.TTLOption{
 			EX: &exSensorDataCache,

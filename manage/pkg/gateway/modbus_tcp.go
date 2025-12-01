@@ -124,7 +124,6 @@ func (c *ModbusTcpClient) connectAndSubscribeOnce(channel chan Value) (err error
 			// 设置从站 ID
 			for _, sensor := range device.Sensors {
 				c.client.SetUnitId(uint8(sensor.SlaveId))
-
 				// 选择寄存器类型
 				var regType modbus.RegType
 
@@ -161,9 +160,10 @@ func (c *ModbusTcpClient) connectAndSubscribeOnce(channel chan Value) (err error
 					c.isOnline = false
 					return
 				case c.channel <- msg:
+					fmt.Println("===========读取寄存器============", msg)
 					c.isOnline = true
 				default:
-					fmt.Println("通道已满，丢弃消息")
+					fmt.Println("===========读取寄存器============", 22)
 					c.isOnline = false
 					return
 				}

@@ -228,8 +228,9 @@ func (c *OpcClient) startChanSub(ctx context.Context, m *monitor.NodeMonitor, in
 					nodes = append(nodes, Value{
 						ID:         node.ID,
 						Value:      msg.Value.Value(),
-						CreateTime: msg.SourceTimestamp,
+						CreateTime: time.Now(),
 						Type:       msg.Value.Type().String(),
+						DeviceId:   node.DeviceId,
 					})
 					fmt.Println("Received nodes:=========", node.ID)
 				}

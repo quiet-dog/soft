@@ -31,6 +31,7 @@ type ManageAreaColumns struct {
 	UpdatedAt string // 更新时间
 	DeletedAt string // 删除时间
 	Remark    string // 备注
+	Level     string //
 }
 
 // manageAreaColumns holds the columns for the table manage_area.
@@ -45,6 +46,7 @@ var manageAreaColumns = ManageAreaColumns{
 	UpdatedAt: "updated_at",
 	DeletedAt: "deleted_at",
 	Remark:    "remark",
+	Level:     "level",
 }
 
 // NewManageAreaDao creates and returns a new DAO object for table data access.

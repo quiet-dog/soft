@@ -9,6 +9,7 @@ package websocket
 import (
 	"context"
 	"devinggo/modules/system/pkg/websocket/glob"
+
 	"github.com/gogf/gf/v2/database/gredis"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
@@ -264,6 +265,20 @@ func GetAllTopics(ctx context.Context) []string {
 	ls, err := getRedisClient().Do(ctx, "SMEMBERS", KeyTopics)
 	if err != nil {
 		glob.WithWsLog().Warning(ctx, "Topics SMEMBERS error:", err)
+		return nil
+	}
+	return gconv.Strings(ls)
+}
+
+// 获取主题下的所有客户端
+func GetAllClientIdByTopic(ctx context.Context, topic string) []string {
+	if g.IsEmpty(topic) {
+		return nil
+	}
+	key := KeyTopic2ClientId + topic
+	ls, err := getRedisClient().Do(ctx, "SMEMBERS", key)
+	if err != nil {
+		glob.WithWsLog().Warning(ctx, "Topic2ClientId SMEMBERS error:", err)
 		return nil
 	}
 	return gconv.Strings(ls)

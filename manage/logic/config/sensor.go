@@ -300,6 +300,23 @@ func (s *sSensor) ReadHistoryData(ctx context.Context, r *model.PageListReq, in 
 	return
 }
 
+// 判断传感器是否在区域中
+func (s *sSensor) IsSensorInArea(ctx context.Context, sensorId int64, areaId int64) (isExit bool, err error) {
+
+	areaIdSql := g.DB().Model(dao.ManageArea.Table()).Where("level like ?", "%,"+fmt.Sprintf("%d", areaId)+",%").Fields("id")
+	deviceIdSql := g.DB().Model(dao.ManageDevice.Table()).Fields("id").Where("area_id in ?", areaIdSql)
+	num, err := s.Model(ctx).Where("device_id in ?", deviceIdSql).Count()
+	if err != nil {
+		return false, err
+	}
+
+	if num > 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 // 处理不同类型的字段数据添加到网关
 func (s *sSensor) handleSensorType(ctx context.Context, serverInfo *res.ServerInfo, deviceId int64, sensorExtend *gjson.Json) (err error) {
 
