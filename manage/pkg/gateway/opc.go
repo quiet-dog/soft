@@ -31,6 +31,7 @@ type OpcClient struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
 	channel  chan Value
+	nodeMap  map[string]OpcNode
 }
 
 func (c *OpcClient) TestPing() (err error) {
@@ -122,6 +123,8 @@ func (c *OpcClient) connectAndSubscribeOnce(channel chan Value) (err error) {
 		// opts = append(opts, opcua.AuthUsername(username, password), opcua.SecurityFromEndpoint(url, ua.UserTokenTypeUserName))
 	} else {
 		// opts = append(opts, opcua.AuthAnonymous(), opcua.SecurityFromEndpoint(ep, ua.UserTokenTypeAnonymous))
+
+		opts = append(opts, opcua.AuthAnonymous())
 	}
 
 	client, err := opcua.NewClient(url, opts...)
@@ -202,16 +205,15 @@ func (c *OpcClient) startCallbackSub(ctx context.Context, m *monitor.NodeMonitor
 }
 
 func (c *OpcClient) startChanSub(ctx context.Context, m *monitor.NodeMonitor, interval, lag time.Duration, nodes ...string) {
-	ch := make(chan *monitor.DataChangeMessage, 16)
+	ch := make(chan *monitor.DataChangeMessage, 1024)
 	for _, v := range c.nodes {
 		nodes = append(nodes, v.NodeId)
 	}
 	sub, err := m.ChanSubscribe(ctx, &opcua.SubscriptionParameters{Interval: interval}, ch, nodes...)
 	if err != nil {
-		fmt.Println("4")
 		fmt.Println(err.Error())
-
 	}
+
 	c.sub = sub
 	defer cleanup(ctx, sub)
 
@@ -228,11 +230,10 @@ func (c *OpcClient) startChanSub(ctx context.Context, m *monitor.NodeMonitor, in
 					nodes = append(nodes, Value{
 						ID:         node.ID,
 						Value:      msg.Value.Value(),
-						CreateTime: time.Now(),
+						CreateTime: msg.SourceTimestamp,
 						Type:       msg.Value.Type().String(),
 						DeviceId:   node.DeviceId,
 					})
-					fmt.Println("Received nodes:=========", node.ID)
 				}
 			}
 			for _, v := range nodes {
@@ -246,7 +247,6 @@ func (c *OpcClient) startChanSub(ctx context.Context, m *monitor.NodeMonitor, in
 
 			// log.Printf("[channel ] sub=%d ts=%s node=%s value=%v", sub.SubscriptionID(), msg.SourceTimestamp.UTC().Format(time.RFC3339), msg.NodeID, msg.Value.Value())
 		}
-		time.Sleep(lag)
 	}
 	// for {
 	// 	select {

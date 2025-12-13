@@ -242,12 +242,7 @@ func (s *sDevice) GetSensorAlarmList(ctx context.Context, deviceId int64) (senso
 func (s *sDevice) SaveSensorAlarmList(ctx context.Context, deviceId int64, sensors []*res.SensorAlarmRow) (err error) {
 
 	thresholdService := NewManageThreshold()
-	// if len(sensors) == 0 {
-	// NewManageSensor().Model(ctx).Where("device_id", deviceId).Delete()
-	// }
-	//  goframe 子查询删除
-	// thresholdService.Model(ctx).Where("sensor_id in (?)", ).Delete()
-	// 创建子sql语句
+
 	subSql := g.DB().Model("manage_sensor").Where("device_id", deviceId).Fields("id")
 	thresholdService.Model(ctx).Where("sensor_id in ?", subSql).Delete()
 	for _, sensor := range sensors {

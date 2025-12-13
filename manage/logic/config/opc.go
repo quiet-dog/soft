@@ -406,6 +406,7 @@ func (s *sOpc) connect(ctx context.Context, server *res.ServerTableRow, endpoint
 	}
 	ep.EndpointURL = endpoint
 
+	opts = append(opts, opcua.AuthAnonymous())
 	c, err = opcua.NewClient(ep.EndpointURL, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create OPC UA client: %w", err)

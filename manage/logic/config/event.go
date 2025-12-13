@@ -101,7 +101,7 @@ func (s *sEvent) CheckEvent(ctx context.Context, sensorId int64, value gateway.V
 }
 
 // 判断浮点是是否插入或更新报警事件
-func (s *sEvent) floatInsertOrUpdateEvent(ctx context.Context, thresholdInfo *req.ThresholdRow, sensorId int64, value float64, timeSamp int64) (alarmId int64, err error) {
+func (s *sEvent) floatInsertOrUpdateEvent(ctx context.Context, thresholdInfo *req.ThresholdRow, sensorId int64, value any, timeSamp int64) (alarmId int64, err error) {
 
 	alarmId, err = manage.ManageAlarmSensorCache().Get(ctx, sensorId, thresholdInfo.AlarmLabelId)
 	if err != nil {
@@ -122,7 +122,7 @@ func (s *sEvent) floatInsertOrUpdateEvent(ctx context.Context, thresholdInfo *re
 }
 
 // 判断浮点是是否需要解除报警
-func (s *sEvent) floatLiftAlarm(ctx context.Context, thresholdInfo *req.ThresholdRow, sensorId int64, value float64) (alarmId int64, err error) {
+func (s *sEvent) floatLiftAlarm(ctx context.Context, thresholdInfo *req.ThresholdRow, sensorId int64, value any) (alarmId int64, err error) {
 
 	alarmId, err = manage.ManageAlarmSensorCache().Get(ctx, sensorId, thresholdInfo.AlarmLabelId)
 

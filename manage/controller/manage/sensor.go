@@ -94,7 +94,6 @@ func (c *sernsorController) ReadEchart(ctx context.Context, in *manage.ReadEchar
 }
 
 func (c *sernsorController) ReadHistoryData(ctx context.Context, in *manage.ReadHistoryDataSensorReq) (out *manage.ReadHistoryDataSensorRes, err error) {
-
 	out = &manage.ReadHistoryDataSensorRes{}
 	out.Data, err = sManage.ManageSensor().ReadHistoryData(ctx, &in.PageListReq, &in.ManageInfluxdbOneSensorSearch)
 	return

@@ -176,15 +176,20 @@ func (s *sInfluxdb) Store(ctx context.Context, data gateway.Value, sensorId int6
 
 // 数据接收处理入口
 func (s *sInfluxdb) StoreDataChannel(ctx context.Context, msg gateway.Msg) (err error) {
+
+	// 同一时间不存储相同数据，防止重复存储
+	t, _ := NewManageSensorDataCache().Get(ctx, msg.Value.ID)
+
+	if t.CreateTime.UnixMilli() == msg.Value.CreateTime.UnixMilli() {
+		return
+	}
+
 	// 存储redis 存储未经转换的数据
 
 	now := time.Now()
 	// 是否报警
 	alarmId, isAlarm, _ := NewManageEvent().CheckEvent(ctx, msg.Value.ID, msg.Value)
-	// 相差多少秒
-	{
-		// 第三方的接入
-	}
+
 	// 存储到influxdb
 	cValue, err := s.Store(ctx, msg.Value, msg.Value.ID)
 	if err != nil {

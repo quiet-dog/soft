@@ -35,7 +35,7 @@ func (t *ExprTemplate) ToValueFloat64(value any) (result float64, err error) {
 }
 
 // 根据expr模板转换为float64
-func (t *ExprTemplate) ToExprValueFloat64(value any) (result float64, err error) {
+func (t *ExprTemplate) ToExprValueFloat64(value any) (result any, err error) {
 	if *t == "" {
 		// 如果value是数值类型的话直接返回
 		vType := reflect.TypeOf(value)
@@ -46,6 +46,16 @@ func (t *ExprTemplate) ToExprValueFloat64(value any) (result float64, err error)
 			return float64(value.(uint)), nil
 		case reflect.Float32, reflect.Float64:
 			return value.(float64), nil
+		case reflect.String:
+			return value.(string), nil
+		case reflect.Bool:
+			return value.(bool), nil
+		case reflect.Struct, reflect.Map, reflect.Slice, reflect.Array:
+			jsonStr, err := json.Marshal(value)
+			if err != nil {
+				return result, err
+			}
+			return string(jsonStr), nil
 		default:
 			return 0, fmt.Errorf("result is not a numeric type, got %T", value)
 		}
@@ -81,6 +91,16 @@ func (t *ExprTemplate) ToExprValueFloat64(value any) (result float64, err error)
 		return float64(data.(uint)), nil
 	case reflect.Float32, reflect.Float64:
 		return data.(float64), nil
+	case reflect.String:
+		return data.(string), nil
+	case reflect.Bool:
+		return data.(bool), nil
+	case reflect.Struct, reflect.Map, reflect.Slice, reflect.Array:
+		jsonStr, err := json.Marshal(data)
+		if err != nil {
+			return result, err
+		}
+		return string(jsonStr), nil
 	default:
 		return 0, fmt.Errorf("result is not a numeric type, got %T", data)
 	}
@@ -91,9 +111,14 @@ func (t *ExprTemplate) ToExprValueFloat64(value any) (result float64, err error)
 func (t *ExprTemplate) ToExprValueInfluxdbFloat64(value any) string {
 	v, err := t.ToExprValueFloat64(value)
 	if err != nil {
-		return fmt.Sprintf("%f", 0.0)
+		return fmt.Sprintf("%v", 0.0)
 	}
-	return fmt.Sprintf("%f", v)
+	// if err != nil {
+	// 	return fmt.Sprintf("%f", 0.0)
+	// }
+	// return fmt.Sprintf("%f", v)
+	// 都转换为字符串
+	return fmt.Sprintf("%v", v)
 }
 
 func (t *ExprTemplate) ToExprValue(value any) (result any, err error) {
