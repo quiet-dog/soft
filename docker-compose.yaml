@@ -1,0 +1,61 @@
+version: "1.0"        # 语法版本
+services:
+  backerd:
+    # build: ./backerd
+    image: soft:1.0
+    container_name: soft-backerd
+    ports:
+      - "8070:8070"
+      - "9080:9080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./resource:/data/resource
+      - ./manifest:/data/manifest
+      - /home/zks/Projects/test/devinggo:/data/devinggo
+      - /home/zks/Projects/test/devinggo/web/admin/dist:/data/admin/dist
+    # 设置工作目录/data
+    working_dir: /data
+    user: root
+    command: sh -c "caddy run --config /etc/caddy/Caddyfile --adapter caddyfile & /data/devinggo/devinggo"
+    depends_on:
+      - minio
+      - kkfileview
+      - mysql
+      - redis
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: soft-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=admin123456
+    volumes:
+      - ./minio/data:/data
+    command: minio server /data --console-address ":9001"
+  kkfileview:
+    image: keking/kkfileview:4.1.0
+    container_name: soft-kkfileview
+    ports:
+      - "8012:8012"
+  mysql:
+    image: mysql:latest
+    container_name: soft-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+      - MYSQL_DATABASE=soft
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/init/init.sql:/docker-entrypoint-initdb.d/init.sql
+  redis:
+    image: redis/redis-stack-server:latest
+    container_name: soft-redis
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=123456
+    volumes:
+      - ./redis/data:/data

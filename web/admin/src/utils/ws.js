@@ -132,6 +132,10 @@ class Ws {
 
     _formatUrl(url, sid, token) {
         if (!token) return '';
+        // url是/ws开头的
+        let scheme = location.protocol == 'https:' ? 'wss:' : 'ws:';
+        let host = location.host;
+        url = `${scheme}//${host}${url}`;
         const myURL = new URL(url);
         const params = myURL.search;
         if (params) {

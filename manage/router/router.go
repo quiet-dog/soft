@@ -22,6 +22,7 @@ func BindController(group *ghttp.RouterGroup) {
 			manage.AlarmController,
 			manage.EventController,
 			manage.DeviceControlController,
+			manage.ManageKnowledgeController,
 		).Middleware(service.Middleware().AdminAuth)
 	})
 }

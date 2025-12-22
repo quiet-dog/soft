@@ -171,6 +171,21 @@ type (
 		Store(ctx context.Context, sensorId int64, thresholdId int64, alarmId int64) (err error)
 		Delete(ctx context.Context, sensorId int64, thresholdId int64) (err error)
 	}
+
+	IManageKnowledge interface {
+		Model(ctx context.Context) *gdb.Model
+		GetPageList(ctx context.Context, req *model.PageListReq, in *req.ManageKnowledgeSearch) (rs []*res.ManageKnowledge, total int, err error)
+		GetList(ctx context.Context, inReq *model.ListReq, in *req.ManageKnowledgeSearch) (out []*res.ManageKnowledge, err error)
+		GetById(ctx context.Context, id uint64) (res *res.ManageKnowledge, err error)
+		Update(ctx context.Context, in *req.ManageKnowledgeUpdate) (err error)
+		Save(ctx context.Context, in *req.ManageKnowledgeSave) (id uint64, err error)
+		Delete(ctx context.Context, ids []uint64) (err error)
+		Recovery(ctx context.Context, ids []uint64) (err error)
+		ChangeStatus(ctx context.Context, id uint64, status int) (err error)
+		NumberOperation(ctx context.Context, id uint64, numberName string, numberValue int) (err error)
+		GetExportList(ctx context.Context, req *model.ListReq, in *req.ManageKnowledgeSearch) (res []*res.ManageKnowledgeExcel, err error)
+		RealDelete(ctx context.Context, ids []uint64) (err error)
+	}
 )
 
 var (
@@ -192,6 +207,7 @@ var (
 	localManageDeviceControl       IManageDeviceControl
 	localManageThird               IManageThird
 	localManageAlarmSensorCache    IManageAlarmSensorCache
+	localManageKnowledge           IManageKnowledge
 )
 
 func ManageArea() IManageArea {
@@ -391,4 +407,15 @@ func ManageAlarmSensorCache() IManageAlarmSensorCache {
 
 func RegisterManageAlarmSensorCache(i IManageAlarmSensorCache) {
 	localManageAlarmSensorCache = i
+}
+
+func ManageKnowledge() IManageKnowledge {
+	if localManageKnowledge == nil {
+		panic("implement not found for interface localManageKnowledge, forgot register?")
+	}
+	return localManageKnowledge
+}
+
+func RegisterManageKnowledge(i IManageKnowledge) {
+	localManageKnowledge = i
 }

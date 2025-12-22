@@ -1,27 +1,27 @@
 :9080 {
-    root * /home/zks/Projects/test/devinggo/web/admin/dist
+    root * /data/admin/dist
     file_server {
         index index.html
     }
 
-    handle_path /uploads/* {
-        reverse_proxy 127.0.0.1:8070
+    handle /uploads/* {
+        reverse_proxy 127.0.0.1:8060
     }
 
 	handle /manage/* {
-        reverse_proxy 127.0.0.1:8070
+        reverse_proxy 127.0.0.1:8060
     }
 
     handle_path /api/* {
-        reverse_proxy 127.0.0.1:8070
+        reverse_proxy 127.0.0.1:8060
     }
 
     handle /system/* {
-        reverse_proxy 127.0.0.1:8070
+        reverse_proxy 127.0.0.1:8060
     }
 
-    handle_path /ws* {
-        reverse_proxy 127.0.0.1:8070 {
+    handle /ws* {
+        reverse_proxy 127.0.0.1:8060 {
             header_up Host {host}
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-For {remote_host}
