@@ -11,8 +11,8 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - ./resource:/data/resource
       - ./manifest:/data/manifest
-      - /home/zks/Projects/test/devinggo:/data/devinggo
-      - /home/zks/Projects/test/devinggo/web/admin/dist:/data/admin/dist
+      - ./devinggo:/data/devinggo
+      - ./web/admin/dist:/data/admin/dist
     # 设置工作目录/data
     working_dir: /data
     user: root
