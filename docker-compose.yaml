@@ -11,8 +11,8 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - ./resource:/data/resource
       - ./manifest:/data/manifest
-      - ./devinggo:/data/devinggo
-      - ./web/admin/dist:/data/admin/dist
+      - /home/zks/Projects/test/devinggo:/data/devinggo
+      - /home/zks/Projects/test/devinggo/web/admin/dist:/data/admin/dist
     # 设置工作目录/data
     working_dir: /data
     user: root
@@ -22,6 +22,7 @@ services:
       - kkfileview
       - mysql
       - redis
+      - influxdb
   minio:
     image: quay.io/minio/minio:latest
     container_name: soft-minio
@@ -39,6 +40,8 @@ services:
     container_name: soft-kkfileview
     ports:
       - "8012:8012"
+    volumes:
+      - ./kkfile/application.properties:/opt/kkFileView-4.1.0/config/application.properties
   mysql:
     image: mysql:latest
     container_name: soft-mysql
@@ -59,3 +62,17 @@ services:
       - REDIS_PASSWORD=123456
     volumes:
       - ./redis/data:/data
+  influxdb:
+    image: influxdb:3-core
+    container_name: soft-influxdb
+    ports:
+      - "8181:8181"
+    command:
+      - influxdb3
+      - serve
+      - --node-id=node0
+      - --object-store=file
+      - --data-dir=/var/lib/influxdb3/data
+      - --plugin-dir=/var/lib/influxdb3/plugins
+    volumes:
+      - ./influxdb/data:/var/lib/influxdb

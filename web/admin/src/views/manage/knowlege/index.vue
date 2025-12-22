@@ -4,8 +4,7 @@
         <ma-crud :options="options" :columns="columns" ref="crudRef">
 
             <template #sort="{ record }">
-                <a-input-number :default-value="record.sort" mode="button"
-                    @change="changeSort($event, record.id, record.sort)" :min="0" :max="1000" />
+                <a-input-number :default-value="record.sort" mode="button" :min="0" :max="1000" />
             </template>
 
             <template #status="{ record }">
@@ -13,7 +12,14 @@
                     :default-checked="record.status == 1" />
             </template>
 
+
+            <!-- 操作前置扩展 -->
+            <template #operationBeforeExtend="{ record }">
+                <a-link @click="openPreviewModal(record)"><icon-eye /> 预览 </a-link>
+            </template>
+
         </ma-crud>
+        <Preview ref="previewRef" />
     </div>
 </template>
 <script setup lang="ts">
@@ -22,7 +28,9 @@ import manageKnowledge from '@/api/manage/knowledge'
 import { Message } from '@arco-design/web-vue'
 import tool from '@/utils/tool'
 import * as common from '@/utils/common'
+import Preview from '@/components/preview/index.vue'
 const crudRef = ref()
+const previewRef = ref<InstanceType<typeof Preview>>()
 
 const numberOperation = (newValue, id, numberName) => {
     manageKnowledge.numberOperation({ id, numberName, numberValue: newValue }).then(res => {
@@ -248,22 +256,28 @@ const columns = reactive([
         title: "备注"
     },
     {
-        addDisplay: true,
-        chunk: true,
-        commonRules: {
-            message: "请输入上传文件",
-            required: true
-        },
-        dataIndex: "path",
-        editDisplay: true,
-        formType: "upload",
-        hide: true,
-        multiple: false,
-        onlyData: true,
-        returnType: "url",
-        search: false,
-        sortable: {},
-        title: "上传文件"
-    }
+		addDisplay: true,
+		chunk: true,
+		commonRules: {
+			message: "请输入上传文件",
+			required: true
+		},
+		dataIndex: "path",
+		editDisplay: true,
+		formType: "upload",
+		hide: true,
+		multiple: false,
+		onlyData: true,
+		returnType: "url",
+		search: false,
+		sortable: {},
+		title: "上传文件",
+        type: "file",
+        width: 200
+	}
 ])
+
+function openPreviewModal(record) {
+    previewRef.value?.open(record.path);
+}
 </script>

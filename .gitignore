@@ -44,3 +44,4 @@ mysql/data/
 redis/
 devinggo
 minio
+influxdb

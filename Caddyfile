@@ -20,6 +20,10 @@
         reverse_proxy 127.0.0.1:8060
     }
 
+    handle_path /api/kkfileview/* {
+        reverse_proxy 192.168.1.141:8012
+    }
+
     handle /ws* {
         reverse_proxy 127.0.0.1:8060 {
             header_up Host {host}
